@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "804894967830",
+    "project_id": "closetmate2025",
+    "storage_bucket": "closetmate2025.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804894967830:android:9cd753a6480502d93e0d37",
+        "android_client_info": {
+          "package_name": "com.example.closet_mate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGUyvLIo1VVLhEyHTpfNVScpGmC-7mBbs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

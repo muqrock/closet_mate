@@ -42,3 +42,6 @@ android {
 flutter {
     source = "../.."
 }
+
+// Add these two lines at the very bottom:
+apply(plugin = "com.google.gms.google-services")

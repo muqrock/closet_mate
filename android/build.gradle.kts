@@ -19,3 +19,23 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // ... other classpaths
+        classpath("com.google.gms:google-services:4.3.15") // Add this line
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// ... rest of your existing build.gradle.kts content ...
