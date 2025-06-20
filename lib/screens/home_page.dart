@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:image_picker/image_picker.dart'; // Import the image_picker package
+import 'dart:io'; // Required for File class
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,6 +12,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  XFile? _selectedImage; // To store the picked image file
 
   final List<Widget> _pages = [
     const ProfileTab(),
@@ -18,12 +21,39 @@ class _HomePageState extends State<HomePage> {
     const Center(child: Text('Settings Tab')),
   ];
 
+  // Function to handle image picking
+  Future<void> _pickImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: source);
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+        });
+        // You can now use _selectedImage.path to display or upload the image
+        print('Image picked: ${_selectedImage!.path}');
+        // TODO: Navigate to an "Add Item Details" page, passing _selectedImage.path
+        // For example:
+        // Navigator.push(context, MaterialPageRoute(builder: (context) => AddItemDetailsScreen(imagePath: _selectedImage!.path)));
+      }
+    } catch (e) {
+      print('Failed to pick image: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
+    }
+    Navigator.pop(
+      context,
+    ); // Close the bottom sheet after picking or cancelling
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _pages[_currentIndex]),
       floatingActionButton:
-          _currentIndex == 0
+          _currentIndex ==
+                  0 // The FAB should ideally be on the Wardrobe/Items tab for adding items
               ? FloatingActionButton(
                 onPressed: () => _showAddOptionsDialog(context),
                 backgroundColor: Colors.deepOrange,
@@ -76,8 +106,18 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.photo_camera),
+                onPressed: () {
+                  // When "Add Item" is clicked, show another bottom sheet for camera/gallery
+                  Navigator.pop(
+                    context,
+                  ); // Close the current bottom sheet first
+                  _showImageSourceSelection(
+                    context,
+                  ); // Show image source selection
+                },
+                icon: const Icon(
+                  Icons.add_box,
+                ), // Changed icon to better represent "Add Item"
                 label: const Text('Add Item'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange.shade100,
@@ -90,7 +130,11 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 12),
               ElevatedButton.icon(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context); // Close the current bottom sheet
+                  // TODO: Navigate to Create Outfit Page
+                  print('Create Outfit tapped');
+                },
                 icon: const Icon(Icons.checkroom),
                 label: const Text('Create Outfit'),
                 style: ElevatedButton.styleFrom(
@@ -108,8 +152,65 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
+
+  // New method to show the camera/gallery options
+  void _showImageSourceSelection(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Choose image source',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () => _pickImage(ImageSource.camera),
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Take Photo'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      Colors.blue.shade100, // Different color for distinction
+                  foregroundColor: Colors.blue,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () => _pickImage(ImageSource.gallery),
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Choose from Gallery'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      Colors.green.shade100, // Different color for distinction
+                  foregroundColor: Colors.green,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
+// Keep your existing ProfileTab and its helper methods as they are.
+// ... (Your ProfileTab code here) ...
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
 
