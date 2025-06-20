@@ -10,22 +10,33 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  int _wardrobeTabIndex = 0; // For Items/Outfits sub-tabs
 
   final List<Widget> _pages = [
     const ProfileTab(),
-    const WardrobeTab(),
-    const PlannerTab(),
-    const SettingsTab(),
+    const Center(child: Text('Wardrobe Tab')),
+    const Center(child: Text('Planner Tab')),
+    const Center(child: Text('Settings Tab')),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      body: SafeArea(child: _pages[_currentIndex]),
+      floatingActionButton:
+          _currentIndex == 0
+              ? FloatingActionButton(
+                onPressed: () => _showAddOptionsDialog(context),
+                backgroundColor: Colors.deepOrange,
+                child: const Icon(Icons.add, size: 30),
+                shape: const CircleBorder(),
+                elevation: 6,
+              )
+              : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.indigo,
+        selectedItemColor: Colors.deepOrange,
+        unselectedItemColor: Colors.grey,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
@@ -43,68 +54,52 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      floatingActionButton:
-          _currentIndex ==
-                  0 // Show on Profile tab
-              ? FloatingActionButton(
-                onPressed: () => _showAddOptionsDialog(context),
-                backgroundColor: Colors.white,
-                child: const Icon(Icons.add, color: Colors.black, size: 36),
-              )
-              : null,
-      body: SafeArea(child: _pages[_currentIndex]),
     );
   }
 
   void _showAddOptionsDialog(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 24,
-            horizontal: 20,
-          ),
-          content: Column(
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              const Text(
+                'What would you like to do?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.photo_camera),
+                label: const Text('Add Item'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.shade100,
+                  foregroundColor: Colors.deepOrange,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // TODO: Navigate to Add Item Page
-                  },
-                  child: const Text('Add items'),
                 ),
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.checkroom),
+                label: const Text('Create Outfit'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.shade100,
+                  foregroundColor: Colors.deepOrange,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // TODO: Navigate to Create Outfit Page
-                  },
-                  child: const Text('Create outfits'),
                 ),
               ),
             ],
@@ -113,235 +108,164 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-
-  void _addNewItem(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Add New Item', style: TextStyle(fontSize: 20)),
-                const SizedBox(height: 20),
-                ListTile(
-                  leading: const Icon(Icons.photo_camera),
-                  title: const Text('Take Photo'),
-                  onTap: () {
-                    /* TODO */
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Choose from Gallery'),
-                  onTap: () {
-                    /* TODO */
-                  },
-                ),
-              ],
-            ),
-          ),
-    );
-  }
 }
 
-// Tab Widgets
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
 
   @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  String currentView = 'main';
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         Container(
-          decoration: BoxDecoration(
-            color: Colors.indigo,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+          color: const Color(0xFFFF914D),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              CircleAvatar(
+                radius: 45,
+                backgroundImage: NetworkImage(
+                  'https://randomuser.me/api/portraits/men/75.jpg',
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Muqri Shaberi',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const Text(
+                '@muqrock',
+                style: TextStyle(fontSize: 14, color: Colors.white70),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStatButton('items'),
+                    _buildStatButton('outfits'),
+                  ],
+                ),
               ),
             ],
           ),
-          height: 200,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Hero(
-                  tag: 'profile-avatar',
-                  child: const CircleAvatar(
-                    radius: 40,
-                    backgroundImage: NetworkImage(
-                      'https://randomuser.me/api/portraits/women/65.jpg',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'muqri shaberi',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-                const Text(
-                  '@muqrock',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: _buildViewContent(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatButton(String type) {
+    String label = type == 'items' ? 'Items' : 'Outfits';
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (currentView == type) {
+            currentView = 'main';
+          } else {
+            currentView = type;
+          }
+        });
+      },
+      child: Column(
+        children: [
+          const Text(
+            '0',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.deepOrange,
             ),
           ),
-        ),
-        Expanded(
-          child: ListView(
-            children: [
-              _buildProfileOption('Edit Profile', Icons.edit),
-              _buildProfileOption('My Statistics', Icons.analytics),
-              _buildProfileOption('Preferences', Icons.settings),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfileOption(String title, IconData icon) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.indigo),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        /* TODO */
-      },
-    );
-  }
-}
-
-class WardrobeTab extends StatefulWidget {
-  const WardrobeTab({super.key});
-
-  @override
-  State<WardrobeTab> createState() => _WardrobeTabState();
-}
-
-class _WardrobeTabState extends State<WardrobeTab> {
-  int _activeSubTab = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.orange,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          height: 50,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              GestureDetector(
-                onTap: () => setState(() => _activeSubTab = 0),
-                child: _buildTabItem('Items (0)', _activeSubTab == 0),
-              ),
-              GestureDetector(
-                onTap: () => setState(() => _activeSubTab = 1),
-                child: _buildTabItem('Outfits (0)', _activeSubTab == 1),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: _activeSubTab == 0 ? _buildItemsView() : _buildOutfitsView(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTabItem(String title, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: isActive ? Colors.orange : Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildItemsView() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: 0,
-      itemBuilder: (context, index) => const SizedBox(),
-    );
-  }
-
-  Widget _buildOutfitsView() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.add, size: 40, color: Colors.grey),
-          SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
-            'Create your first outfit',
-            style: TextStyle(color: Colors.grey),
+            label,
+            style: const TextStyle(fontSize: 16, color: Colors.black54),
           ),
         ],
       ),
     );
   }
-}
 
-class PlannerTab extends StatelessWidget {
-  const PlannerTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Planner Tab',
-        style: Theme.of(context).textTheme.headlineMedium,
-      ),
-    );
+  Widget _buildViewContent() {
+    if (currentView == 'items') {
+      return _buildDummyGrid('Item');
+    } else if (currentView == 'outfits') {
+      return _buildDummyGrid('Outfit');
+    } else {
+      return const Center(
+        child: Text(
+          'Scroll down for more features...',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
   }
-}
 
-class SettingsTab extends StatelessWidget {
-  const SettingsTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Settings Tab',
-        style: Theme.of(context).textTheme.headlineMedium,
+  Widget _buildDummyGrid(String label) {
+    return GridView.builder(
+      itemCount: 4,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
+      itemBuilder: (context, index) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                label == 'Item' ? Icons.checkroom : Icons.style,
+                size: 40,
+                color: Colors.deepOrange,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '$label ${index + 1}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
