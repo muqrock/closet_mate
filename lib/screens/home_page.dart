@@ -13,11 +13,13 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   // int _wardrobeTabIndex = 0; // This variable is not used in HomePage anymore, only in WardrobeTab's state
 
-  final List<Widget> _pages = [
+  List<Widget> get _pages => [
     const ProfileTab(),
     const WardrobeTab(),
     const PlannerTab(),
-    const SettingsTab(), // SettingsTab is at index 3
+    SettingsTab(
+      onBack: () => setState(() => _currentIndex = 0),
+    ), // 👈 go to Profile tab
   ];
 
   // Function to show the custom action dialog (for Add Item/Outfit)
@@ -549,7 +551,9 @@ class PlannerTab extends StatelessWidget {
 }
 
 class SettingsTab extends StatelessWidget {
-  const SettingsTab({super.key});
+  final VoidCallback onBack;
+
+  const SettingsTab({super.key, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -563,15 +567,7 @@ class SettingsTab extends StatelessWidget {
             Icons.arrow_back,
             color: Colors.black,
           ), // Black back arrow
-          onPressed: () {
-            // This is a tab, so popping might not be the desired behavior.
-            // If you navigate to Settings from another route, you might pop.
-            // But since it's a tab, typically you just switch tabs.
-            // For now, let's just print.
-            print('Back button pressed on Settings tab');
-            // If Settings tab was pushed onto a navigator stack, you could use:
-            // Navigator.of(context).pop();
-          },
+          onPressed: onBack,
         ),
         title: const Text(
           'Settings',
