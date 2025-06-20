@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   material_design_icons_flutter: ^5.0.6595
+  image_picker: ^1.0.4
   # firebase_core: ^2.15.1
   # cloud_firestore: ^4.8.0
   firebase_core: ^2.25.4
@@ -61,17 +62,18 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logo.png
+<<<<<<< Updated upstream
   
+=======
+
+>>>>>>> Stashed changes
 
 # Add this section at root level (not indented under flutter)
 dependency_overrides:
   firebase_auth_web: ^5.8.12
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
 
+  
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
