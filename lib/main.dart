@@ -1,12 +1,11 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
-import 'firebase_options.dart'; // make sure this file exists after running `flutterfire configure`
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
+import 'screens/landing_page.dart';
 import 'screens/login_page.dart';
-import 'screens/register_page.dart'; // Import your new register page
-import 'screens/home_page.dart'; // Your existing home page
+import 'screens/register_page.dart';
+import 'screens/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,15 +19,12 @@ class DigitalClosetApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title:
-          'Closet Mate', // Changed title to 'Closet Mate' as per your app description
+      title: 'Closet Mate',
       theme: ThemeData(
-        primarySwatch: Colors.deepOrange, // Main app theme color
-        fontFamily: 'Montserrat', // Using Montserrat font for a modern look
+        primarySwatch: Colors.deepOrange,
+        fontFamily: 'Montserrat',
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        scaffoldBackgroundColor:
-            Colors.grey[50], // Very light background for consistency
-        // Global Input Field Theme
+        scaffoldBackgroundColor: Colors.grey[50],
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
@@ -37,7 +33,7 @@ class DigitalClosetApp extends StatelessWidget {
           prefixIconColor: Colors.grey.shade600,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none, // No visible border by default
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -45,10 +41,7 @@ class DigitalClosetApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-              color: Colors.deepOrange,
-              width: 2,
-            ), // Deep Orange border on focus
+            borderSide: BorderSide(color: Colors.deepOrange, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -63,47 +56,41 @@ class DigitalClosetApp extends StatelessWidget {
             horizontal: 16,
           ),
         ),
-
-        // Global ElevatedButton Theme
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepOrange, // Matches primary theme color
+            backgroundColor: Colors.deepOrange,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                12,
-              ), // Rounded corners for buttons
+              borderRadius: BorderRadius.circular(12),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             textStyle: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
-            elevation: 5, // Subtle shadow
+            elevation: 5,
           ),
         ),
       ),
-      initialRoute: '/login',
+
+      // ✅ Set this instead of initialRoute
+      home: LandingPage(),
+
+      // ✅ Define named routes
       routes: {
         '/login': (context) => const LoginPage(),
-        '/register':
-            (context) => const RegisterPage(), // Add the register page route
-        // Use StreamBuilder to handle authentication state for the home page
+        '/register': (context) => const RegisterPage(),
         '/home':
             (context) => StreamBuilder<User?>(
               stream: FirebaseAuth.instance.authStateChanges(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  // Show a loading indicator while checking auth state
                   return const Scaffold(
                     body: Center(child: CircularProgressIndicator()),
                   );
                 } else if (snapshot.hasData && snapshot.data != null) {
-                  // User is logged in, show the HomePage
                   return const HomePage();
                 } else {
-                  // User is not logged in, redirect to LoginPage
-                  // This is important if a user tries to go directly to /home without being authenticated
                   return const LoginPage();
                 }
               },
