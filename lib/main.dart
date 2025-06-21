@@ -6,6 +6,7 @@ import 'screens/landing_page.dart';
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
 import 'screens/home_page.dart';
+import 'screens/settings_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,6 +96,7 @@ class DigitalClosetApp extends StatelessWidget {
                 }
               },
             ),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }

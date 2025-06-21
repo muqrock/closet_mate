@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:image_picker/image_picker.dart'; // Import the image_picker package
 import 'dart:io'; // Required for File class
+import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,7 +19,7 @@ class _HomePageState extends State<HomePage> {
     const ProfileTab(),
     const Center(child: Text('Wardrobe Tab')),
     const Center(child: Text('Planner Tab')),
-    const Center(child: Text('Settings Tab')),
+    const SettingsPage(),
   ];
 
   // Function to handle image picking
