@@ -29,7 +29,8 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed:
+                      () => Navigator.pushReplacementNamed(context, '/home'),
                 ),
                 const SizedBox(width: 10),
                 const Text(
@@ -49,7 +50,7 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.person_outline,
               label: 'Edit Profile',
               onTap: () {
-                // TODO: Navigate to edit profile page
+                Navigator.pushNamed(context, '/edit-profile');
               },
             ),
 
