@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'dart:html' as html; // For web only
+import 'dart:typed_data';
 
 import 'settings_page.dart';
+import 'add_item_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,7 +20,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes; // For web image bytes
+  XFile? _selectedImageFile; // For mobile
 
   final List<Widget> _pages = [
     const ProfileTab(),
@@ -26,24 +30,85 @@ class _HomePageState extends State<HomePage> {
     const SettingsPage(),
   ];
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImageWeb() async {
+    final html.FileUploadInputElement uploadInput =
+        html.FileUploadInputElement();
+    uploadInput.accept = 'image/*';
+    uploadInput.click();
+
+    uploadInput.onChange.listen((event) async {
+      final files = uploadInput.files;
+      if (files != null && files.isNotEmpty) {
+        final file = files[0];
+        final reader = html.FileReader();
+
+        reader.onLoadEnd.listen((e) {
+          setState(() {
+            _selectedImageBytes = reader.result as Uint8List?;
+          });
+          _navigateToAddItemPage();
+        });
+
+        reader.readAsArrayBuffer(file);
+      }
+    });
+  }
+
+  Future<void> _pickImageMobile(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? image = await picker.pickImage(source: source);
       if (image != null) {
         setState(() {
-          _selectedImage = image;
+          _selectedImageFile = image;
         });
-        print('Image picked: ${_selectedImage!.path}');
-        // TODO: Navigate to Add Item Details screen
+        _navigateToAddItemPage();
       }
     } catch (e) {
-      print('Failed to pick image: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
+      _showErrorSnackbar('Failed to pick image: $e');
     }
-    Navigator.pop(context);
+  }
+
+  void _navigateToAddItemPage() {
+    Navigator.pop(context); // Close bottom sheet
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => AddItemPage(
+              imageFile: kIsWeb ? null : File(_selectedImageFile!.path),
+              imageBytes: _selectedImageBytes,
+              isWeb: kIsWeb,
+            ),
+      ),
+    );
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // Add this method to fix the error
+  Widget _buildSourceButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    required MaterialColor color,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color[100], // Use color[100] instead of shade100
+        foregroundColor: color,
+        minimumSize: const Size.fromHeight(50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -53,148 +118,144 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton:
           _currentIndex == 0
               ? FloatingActionButton(
-                onPressed: () => _showAddOptionsDialog(context),
+                onPressed: _showAddOptionsDialog,
                 backgroundColor: Colors.deepOrange,
                 child: const Icon(Icons.add, size: 30),
                 shape: const CircleBorder(),
                 elevation: 6,
               )
               : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.deepOrange,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          BottomNavigationBarItem(
-            icon: Icon(MdiIcons.wardrobe),
-            label: 'Wardrobe',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Planner',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
+      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 
-  void _showAddOptionsDialog(BuildContext context) {
+  BottomNavigationBar _buildBottomNavBar() {
+    return BottomNavigationBar(
+      currentIndex: _currentIndex,
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: Colors.deepOrange,
+      unselectedItemColor: Colors.grey,
+      onTap: (index) => setState(() => _currentIndex = index),
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        BottomNavigationBarItem(
+          icon: Icon(MdiIcons.wardrobe),
+          label: 'Wardrobe',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
+          label: 'Planner',
+        ),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+      ],
+    );
+  }
+
+  void _showAddOptionsDialog() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       backgroundColor: Colors.white,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'What would you like to do?',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showImageSourceSelection(context);
-                },
-                icon: const Icon(Icons.add_box),
-                label: const Text('Add Item'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade100,
-                  foregroundColor: Colors.deepOrange,
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+      builder:
+          (context) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'What would you like to do?',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  print('Create Outfit tapped');
-                },
-                icon: const Icon(Icons.checkroom),
-                label: const Text('Create Outfit'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade100,
-                  foregroundColor: Colors.deepOrange,
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                const SizedBox(height: 20),
+                _buildActionButton(
+                  icon: Icons.add_box,
+                  label: 'Add Item',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showImageSourceSelection();
+                  },
+                  color: Colors.orange,
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                _buildActionButton(
+                  icon: Icons.checkroom,
+                  label: 'Create Outfit',
+                  onPressed: () {
+                    Navigator.pop(context);
+                    print('Create Outfit tapped');
+                  },
+                  color: Colors.orange,
+                ),
+              ],
+            ),
           ),
-        );
-      },
     );
   }
 
-  void _showImageSourceSelection(BuildContext context) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    required MaterialColor color,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color[100], // Use color[100] instead of shade100
+        foregroundColor: color,
+        minimumSize: const Size.fromHeight(50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showImageSourceSelection() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       backgroundColor: Colors.white,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Choose image source',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () => _pickImage(ImageSource.camera),
-                icon: const Icon(Icons.camera_alt),
-                label: const Text('Take Photo'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade100,
-                  foregroundColor: Colors.blue,
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+      builder:
+          (context) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Choose image source',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: () => _pickImage(ImageSource.gallery),
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Choose from Gallery'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade100,
-                  foregroundColor: Colors.green,
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 20),
+                if (!kIsWeb)
+                  _buildSourceButton(
+                    icon: Icons.camera_alt,
+                    label: 'Take Photo',
+                    onPressed: () => _pickImageMobile(ImageSource.camera),
+                    color: Colors.blue,
                   ),
+                if (!kIsWeb) const SizedBox(height: 12),
+                _buildSourceButton(
+                  icon: Icons.photo_library,
+                  label: 'Choose from Gallery',
+                  onPressed:
+                      kIsWeb
+                          ? _pickImageWeb
+                          : () => _pickImageMobile(ImageSource.gallery),
+                  color: Colors.green,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
     );
   }
 }
+
+// [Keep your existing ProfileTab implementation]
 
 // Profile Tab with Firebase data
 class ProfileTab extends StatelessWidget {
