@@ -37,12 +37,19 @@ dependencies:
   firebase_auth: ^4.17.4
   firebase_auth_web: ^5.8.12  # Add this as regular dependency
   cloud_firestore: ^4.13.6
-  image_picker: ^1.0.4  # Latest stable version (as of Flutter 3.x)
   
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  sqflite: ^2.4.2
+  path_provider: ^2.1.5
+  image_picker: ^1.1.2
+  provider: ^6.1.5
+  intl: ^0.20.2
+  shared_preferences: ^2.5.3
+  path: ^1.9.1
+  table_calendar: ^3.2.0
 
 dev_dependencies:
   flutter_test:
