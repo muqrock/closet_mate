@@ -9,6 +9,10 @@ import 'dart:html' as html; // For web only
 import 'dart:typed_data';
 
 import 'settings_page.dart';
+import 'wardrobe_page.dart';
+import 'add_item_page.dart';
+import 'planner_page.dart';
+
 import 'add_item_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -25,10 +29,35 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     const ProfileTab(),
-    const Center(child: Text('Wardrobe Tab')),
-    const Center(child: Text('Planner Tab')),
+    const WardrobePage(),
+    const PlannerPage(),
     const SettingsPage(),
   ];
+
+  Future<void> _pickImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: source);
+      if (image != null) {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddItemPage(imageFile: File(image.path)),
+          ),
+        );
+
+        if (result == true) {
+          // Refresh wardrobe manually if needed
+        }
+      }
+    } catch (e) {
+      print('Failed to pick image: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
+    }
+    Navigator.pop(context);
+  }
 
   Future<void> _pickImageWeb() async {
     final html.FileUploadInputElement uploadInput =
@@ -375,3 +404,5 @@ class ProfileTab extends StatelessWidget {
     );
   }
 }
+// Settings Page
+// This is a placeholder for the SettingsPage widget.
