@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
 
+import 'add_item_page.dart'; // Make sure this path is correct
+
 class WardrobePage extends StatefulWidget {
   const WardrobePage({super.key});
 
@@ -31,7 +33,10 @@ class _WardrobePageState extends State<WardrobePage> {
         await db.execute('''
           CREATE TABLE items(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            imagePath TEXT
+            imagePath TEXT,
+            name TEXT,
+            type TEXT,
+            color TEXT
           )
         ''');
       },
@@ -46,26 +51,25 @@ class _WardrobePageState extends State<WardrobePage> {
     });
   }
 
-  Future<void> _addItem(XFile file) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    final savedImage = await File(file.path).copy('${directory.path}/$fileName.jpg');
-
-    await _db.insert('items', {'imagePath': savedImage.path});
-    _fetchItems();
-  }
-
   Future<void> _deleteItem(int id, String imagePath) async {
     await File(imagePath).delete();
     await _db.delete('items', where: 'id = ?', whereArgs: [id]);
     _fetchItems();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImageAndAddItem() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      _addItem(image);
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AddItemPage(imageFile: File(image.path)),
+        ),
+      );
+      if (result == true) {
+        _fetchItems();
+      }
     }
   }
 
@@ -78,7 +82,7 @@ class _WardrobePageState extends State<WardrobePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: _pickImage,
+            onPressed: _pickImageAndAddItem,
           ),
         ],
       ),
@@ -90,17 +94,49 @@ class _WardrobePageState extends State<WardrobePage> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
+                childAspectRatio: 0.8,
               ),
               itemCount: _items.length,
               itemBuilder: (context, index) {
                 final item = _items[index];
                 return GestureDetector(
                   onLongPress: () => _showDeleteDialog(item['id'], item['imagePath']),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      File(item['imagePath']),
-                      fit: BoxFit.cover,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                            child: Image.file(
+                              File(item['imagePath']),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(item['type'] ?? '', style: const TextStyle(color: Colors.grey)),
+                              Text(item['color'] ?? '', style: const TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -132,5 +168,3 @@ class _WardrobePageState extends State<WardrobePage> {
     );
   }
 }
-// This code defines a WardrobePage widget that allows users to manage their wardrobe items.
-// It includes functionality to add items by picking images from the gallery, display them in a grid,

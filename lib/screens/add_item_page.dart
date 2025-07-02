@@ -36,18 +36,42 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   Future<void> _saveItem() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    final savedImage = await widget.imageFile.copy('${directory.path}/$fileName.jpg');
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      final savedImage = await widget.imageFile.copy('${directory.path}/$fileName.jpg');
 
-    await _db.insert('items', {
-      'imagePath': savedImage.path,
-      'name': _itemName,
-      'type': _itemType,
-      'color': _itemColor,
-    });
+      await _db.insert('items', {
+        'imagePath': savedImage.path,
+        'name': _itemName,
+        'type': _itemType,
+        'color': _itemColor,
+      });
 
-    Navigator.pop(context, true); // Return to previous screen with refresh signal
+      // Show success snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Item added successfully!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Delay and go back to previous screen
+      await Future.delayed(const Duration(seconds: 1));
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to save item: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -65,24 +89,31 @@ class _AddItemPageState extends State<AddItemPage> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.file(widget.imageFile, height: 250, fit: BoxFit.cover),
+                child: Image.file(
+                  widget.imageFile,
+                  height: 250,
+                  fit: BoxFit.cover,
+                ),
               ),
               const SizedBox(height: 20),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Item Name'),
-                validator: (value) => value == null || value.isEmpty ? 'Enter name' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter name' : null,
                 onSaved: (value) => _itemName = value!,
               ),
               const SizedBox(height: 10),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Item Type'),
-                validator: (value) => value == null || value.isEmpty ? 'Enter type' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter type' : null,
                 onSaved: (value) => _itemType = value!,
               ),
               const SizedBox(height: 10),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Color'),
-                validator: (value) => value == null || value.isEmpty ? 'Enter color' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Enter color' : null,
                 onSaved: (value) => _itemColor = value!,
               ),
               const SizedBox(height: 20),
@@ -97,7 +128,10 @@ class _AddItemPageState extends State<AddItemPage> {
                   backgroundColor: Colors.deepOrange,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text("Save Item", style: TextStyle(fontSize: 16)),
+                child: const Text(
+                  "Save Item",
+                  style: TextStyle(fontSize: 16),
+                ),
               )
             ],
           ),
@@ -106,7 +140,3 @@ class _AddItemPageState extends State<AddItemPage> {
     );
   }
 }
-// This code defines an AddItemPage widget that allows users to add details for a wardrobe item.
-// It includes a form to input item name, type, and color, and saves the item to a SQLite database.
-// The image file is passed from the previous screen, and the item details are saved along with the image path.
-// The user can navigate back to the previous screen after saving the item, which will refresh the wardrobe list.
