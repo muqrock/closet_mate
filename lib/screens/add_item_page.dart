@@ -60,6 +60,36 @@ class _AddItemPageState extends State<AddItemPage> {
     print('Saving item...');
   }
 
+  void _showSizePicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        final sizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
+
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          itemCount: sizes.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final size = sizes[index];
+            return ListTile(
+              title: Text(size),
+              onTap: () {
+                setState(() {
+                  _sizeController.text = size;
+                });
+                Navigator.pop(context);
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildImagePreview() {
     if (widget.isWeb) {
       if (widget.imageBytes != null) {
@@ -88,10 +118,9 @@ class _AddItemPageState extends State<AddItemPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: _buildImagePreview()), // Use the new image preview
+            Center(child: _buildImagePreview()),
             const SizedBox(height: 20),
 
-            // ... [Keep all your existing form fields exactly as they are]
             _buildLabel('Category'),
             DropdownButtonFormField<String>(
               value: _selectedCategory,
@@ -151,7 +180,18 @@ class _AddItemPageState extends State<AddItemPage> {
 
             const SizedBox(height: 16),
             _buildLabel('Size'),
-            TextField(controller: _sizeController),
+            GestureDetector(
+              onTap: _showSizePicker,
+              child: AbsorbPointer(
+                child: TextFormField(
+                  controller: _sizeController,
+                  decoration: const InputDecoration(
+                    hintText: 'Select size',
+                    suffixIcon: Icon(Icons.keyboard_arrow_down),
+                  ),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 16),
             _buildLabel('Price'),

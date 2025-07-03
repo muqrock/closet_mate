@@ -9,6 +9,8 @@ import 'add_item_page.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'wardrobe_page.dart';
+import 'planner_page.dart';
 
 import 'settings_page.dart';
 
@@ -25,8 +27,8 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     const ProfileTab(),
-    const Center(child: Text('Wardrobe Tab')),
-    const Center(child: Text('Planner Tab')),
+    const WardrobePage(), // ← Now uses actual page
+    const PlannerPage(), // ← Now uses actual page
     const SettingsPage(),
   ];
 
