@@ -1,12 +1,20 @@
 import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart'; // for kIsWeb
 
 class AddItemPage extends StatefulWidget {
-  final File imageFile;
+  final File? imageFile; // For mobile/desktop
+  final Uint8List? imageBytes; // For web
+  final bool isWeb;
 
-  const AddItemPage({super.key, required this.imageFile});
+  const AddItemPage({
+    super.key,
+    this.imageFile,
+    this.imageBytes,
+    required this.isWeb,
+  });
 
   @override
   State<AddItemPage> createState() => _AddItemPageState();
@@ -52,6 +60,18 @@ class _AddItemPageState extends State<AddItemPage> {
     print('Saving item...');
   }
 
+  Widget _buildImagePreview() {
+    if (widget.isWeb) {
+      if (widget.imageBytes != null) {
+        return Image.memory(widget.imageBytes!, height: 200);
+      } else {
+        return const Icon(Icons.error, size: 200, color: Colors.red);
+      }
+    } else {
+      return Image.file(widget.imageFile!, height: 200);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,9 +88,10 @@ class _AddItemPageState extends State<AddItemPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Image.file(widget.imageFile, height: 200)),
+            Center(child: _buildImagePreview()), // Use the new image preview
             const SizedBox(height: 20),
 
+            // ... [Keep all your existing form fields exactly as they are]
             _buildLabel('Category'),
             DropdownButtonFormField<String>(
               value: _selectedCategory,

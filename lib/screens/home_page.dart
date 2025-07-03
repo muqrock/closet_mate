@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:html' as html; // Add this (only for web)
+import 'package:flutter/foundation.dart'; // for kIsWeb
+
+import 'add_item_page.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -31,19 +35,33 @@ class _HomePageState extends State<HomePage> {
     try {
       final XFile? image = await picker.pickImage(source: source);
       if (image != null) {
-        setState(() {
-          _selectedImage = image;
-        });
-        print('Image picked: ${_selectedImage!.path}');
-        // TODO: Navigate to Add Item Details screen
+        Navigator.pop(context); // Close bottom sheet FIRST
+
+        if (kIsWeb) {
+          final bytes = await image.readAsBytes();
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddItemPage(imageBytes: bytes, isWeb: true),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) =>
+                      AddItemPage(imageFile: File(image.path), isWeb: false),
+            ),
+          );
+        }
       }
     } catch (e) {
-      print('Failed to pick image: $e');
+      Navigator.pop(context); // Close bottom sheet on error too
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
     }
-    Navigator.pop(context);
   }
 
   @override
