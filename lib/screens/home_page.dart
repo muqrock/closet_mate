@@ -7,10 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'settings_page.dart';
-import 'wardrobe_page.dart';
-import 'add_item_page.dart';
-import 'planner_page.dart';
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,36 +21,30 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = [
     const ProfileTab(),
-    const WardrobePage(),
-    const PlannerPage(),
+    const Center(child: Text('Wardrobe Tab')),
+    const Center(child: Text('Planner Tab')),
     const SettingsPage(),
   ];
 
   Future<void> _pickImage(ImageSource source) async {
-  final ImagePicker picker = ImagePicker();
-  try {
-    final XFile? image = await picker.pickImage(source: source);
-    if (image != null) {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AddItemPage(imageFile: File(image.path)),
-        ),
-      );
-
-      if (result == true) {
-        // Refresh wardrobe manually if needed
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? image = await picker.pickImage(source: source);
+      if (image != null) {
+        setState(() {
+          _selectedImage = image;
+        });
+        print('Image picked: ${_selectedImage!.path}');
+        // TODO: Navigate to Add Item Details screen
       }
+    } catch (e) {
+      print('Failed to pick image: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
     }
-  } catch (e) {
-    print('Failed to pick image: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to pick image: $e')),
-    );
+    Navigator.pop(context);
   }
-  Navigator.pop(context);
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -324,5 +314,3 @@ class ProfileTab extends StatelessWidget {
     );
   }
 }
-// Settings Page
-// This is a placeholder for the SettingsPage widget.
