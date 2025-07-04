@@ -56,7 +56,7 @@ class _WardrobePageState extends State<WardrobePage> {
       final List<Map<String, dynamic>> data = await supabase
           .from('items')
           .select('*') // Select all columns
-          .eq('user_firebase_uid', currentUser.uid) // Filter by Firebase UID
+          .eq('user_id', currentUser.uid) // Filter by Firebase UID
           .order('created_at', ascending: false); // Order by creation date
 
       setState(() {

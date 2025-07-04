@@ -2,15 +2,14 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart'; // for kIsWeb
-import 'package:supabase_flutter/supabase_flutter.dart'
-    as supabase_flutter; // <--- ADD 'as supabase_flutter' here
-import 'package:uuid/uuid.dart'; // For generating unique IDs
-import 'package:firebase_auth/firebase_auth.dart'; // This import remains as is
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase_flutter;
+import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddItemPage extends StatefulWidget {
-  final File? imageFile; // For mobile/desktop
-  final Uint8List? imageBytes; // For web
+  final File? imageFile;
+  final Uint8List? imageBytes;
   final bool isWeb;
 
   const AddItemPage({
@@ -37,10 +36,9 @@ class _AddItemPageState extends State<AddItemPage> {
   final List<String> _colors = [];
   final List<String> _tags = [];
 
-  final Uuid _uuid = const Uuid(); // Initialize Uuid for unique IDs
-  // Now, SupabaseClient is available directly because it's not conflicted
+  final Uuid _uuid = const Uuid();
   final supabase_flutter.SupabaseClient supabase =
-      supabase_flutter.Supabase.instance.client; // <--- USE THE PREFIX HERE
+      supabase_flutter.Supabase.instance.client;
 
   @override
   void dispose() {
@@ -74,52 +72,105 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   Future<void> _saveItem() async {
-    final User? user = FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Not authenticated')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You must be logged in to save items')),
+        );
+      }
       return;
     }
 
-    // 1. Create user-specific folder path
-    final String userFolder = user.uid; // Firebase UID as folder name
-    final String itemId = _uuid.v4();
-    final String imagePath = '$userFolder/$itemId.png'; // Nested path
+    // Validate required fields
+    if (_brandController.text.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Brand is required')),
+        );
+      }
+      return;
+    }
+
+    final filePath = '${user.uid}/${_uuid.v4()}.png';
 
     try {
-      // 2. Upload to user's folder
+      // Upload image
       if (kIsWeb && widget.imageBytes != null) {
         await supabase.storage.from('outfitimage').uploadBinary(
-              imagePath,
+              filePath,
               widget.imageBytes!,
               fileOptions: const supabase_flutter.FileOptions(
                 contentType: 'image/png',
+                upsert: false,
               ),
             );
       } else if (widget.imageFile != null) {
         await supabase.storage.from('outfitimage').upload(
-              imagePath,
+              filePath,
               widget.imageFile!,
               fileOptions: const supabase_flutter.FileOptions(
                 contentType: 'image/png',
+                upsert: false,
               ),
             );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No image selected')),
+          );
+        }
+        return;
       }
 
-      // 3. Get public URL (if bucket is public)
-      final imageUrl =
-          supabase.storage.from('outfitimage').getPublicUrl(imagePath);
-
-      // 4. Save to database
-      await supabase.from('items').insert({
-        'id': itemId,
+      // Prepare all item data
+      final itemData = {
         'user_id': user.uid,
-        'image_path': imagePath, // Store the full path
-        // ... other fields
-      });
+        'image_path': filePath,
+        'image_url':
+            supabase.storage.from('outfitimage').getPublicUrl(filePath),
+        'category': _selectedCategory,
+        'brand': _brandController.text.trim(),
+        'size': _sizeController.text.trim(),
+        'price': double.tryParse(_priceController.text) ?? 0.0,
+        'date_purchased': _selectedDate?.toIso8601String(),
+        'private': _private,
+        'colors': _colors.isNotEmpty ? _colors : null,
+        'tags': _tags.isNotEmpty ? _tags : null,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      // Insert into database
+      final response = await supabase.from('items').insert(itemData).select();
+      print('Insert response: $response');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item saved successfully!')),
+        );
+        Navigator.pop(context, true);
+      }
+    } on supabase_flutter.StorageException catch (e) {
+      print('Storage Error: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image: ${e.message}')),
+        );
+      }
+    } on supabase_flutter.PostgrestException catch (e) {
+      print('Database Error: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save item: ${e.message}')),
+        );
+      }
     } catch (e) {
-      print('Upload error: $e');
+      print('Unexpected error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('An unexpected error occurred')),
+        );
+      }
     }
   }
 
