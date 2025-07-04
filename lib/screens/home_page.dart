@@ -75,9 +75,9 @@ class _HomePageState extends State<HomePage> {
               ? FloatingActionButton(
                 onPressed: () => _showAddOptionsDialog(context),
                 backgroundColor: Colors.deepOrange,
-                child: const Icon(Icons.add, size: 30),
                 shape: const CircleBorder(),
                 elevation: 6,
+                child: const Icon(Icons.add, size: 30),
               )
               : null,
       bottomNavigationBar: BottomNavigationBar(

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
-import 'dart:collection';
 
 class PlannerPage extends StatefulWidget {
   const PlannerPage({super.key});
@@ -51,7 +50,10 @@ class _PlannerPageState extends State<PlannerPage> {
     final Map<DateTime, List<String>> newEvents = {};
     for (final row in rows) {
       final date = DateTime.parse(row['date'] as String);
-      newEvents[date] = [...(newEvents[date] ?? []), row['outfitName'] as String];
+      newEvents[date] = [
+        ...(newEvents[date] ?? []),
+        row['outfitName'] as String,
+      ];
     }
     setState(() {
       _events = newEvents;
@@ -65,10 +67,7 @@ class _PlannerPageState extends State<PlannerPage> {
 
   Future<void> _addEvent(String outfitName) async {
     final dateStr = _selectedDay!.toIso8601String();
-    await _db.insert('planner', {
-      'date': dateStr,
-      'outfitName': outfitName,
-    });
+    await _db.insert('planner', {'date': dateStr, 'outfitName': outfitName});
     await _loadEvents();
   }
 
@@ -76,25 +75,29 @@ class _PlannerPageState extends State<PlannerPage> {
     final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Outfit Plan'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Outfit Name'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                await _addEvent(controller.text);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Add Outfit Plan'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(labelText: 'Outfit Name'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (controller.text.isNotEmpty) {
+                    await _addEvent(controller.text);
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -126,7 +129,8 @@ class _PlannerPageState extends State<PlannerPage> {
               });
               _selectedEvents.value = _getEventsForDay(selectedDay);
             },
-            onFormatChanged: (format) => setState(() => _calendarFormat = format),
+            onFormatChanged:
+                (format) => setState(() => _calendarFormat = format),
             eventLoader: _getEventsForDay,
           ),
           const SizedBox(height: 8),
@@ -138,14 +142,14 @@ class _PlannerPageState extends State<PlannerPage> {
           Expanded(
             child: ValueListenableBuilder<List<String>>(
               valueListenable: _selectedEvents,
-              builder: (context, value, _) => ListView.builder(
-                itemCount: value.length,
-                itemBuilder: (context, index) => ListTile(
-                  title: Text(value[index]),
-                ),
-              ),
+              builder:
+                  (context, value, _) => ListView.builder(
+                    itemCount: value.length,
+                    itemBuilder:
+                        (context, index) => ListTile(title: Text(value[index])),
+                  ),
             ),
-          )
+          ),
         ],
       ),
     );
