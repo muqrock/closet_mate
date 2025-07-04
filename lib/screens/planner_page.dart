@@ -1,4 +1,3 @@
-// planner_page.dart
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:sqflite/sqflite.dart';
@@ -18,6 +17,7 @@ class _PlannerPageState extends State<PlannerPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, List<String>> _events = {};
+  List<String> _allOutfits = []; // 🆕 Store all outfit names
 
   @override
   void initState() {
@@ -30,8 +30,8 @@ class _PlannerPageState extends State<PlannerPage> {
   Future<void> _initDb() async {
     final dbPath = await getDatabasesPath();
     _db = await openDatabase(
-      p.join(dbPath, 'wardrobe.db'),
-      version: 1,
+      p.join(dbPath, 'closetmate.db'),
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE IF NOT EXISTS planner(
@@ -43,6 +43,7 @@ class _PlannerPageState extends State<PlannerPage> {
       },
     );
     await _loadEvents();
+    await _loadOutfits(); // 🆕 Load outfits
   }
 
   Future<void> _loadEvents() async {
@@ -50,8 +51,8 @@ class _PlannerPageState extends State<PlannerPage> {
     final Map<DateTime, List<String>> newEvents = {};
     for (final row in rows) {
       final date = DateTime.parse(row['date'] as String);
-      newEvents[date] = [
-        ...(newEvents[date] ?? []),
+      newEvents[DateTime(date.year, date.month, date.day)] = [
+        ...(newEvents[DateTime(date.year, date.month, date.day)] ?? []),
         row['outfitName'] as String,
       ];
     }
@@ -59,6 +60,12 @@ class _PlannerPageState extends State<PlannerPage> {
       _events = newEvents;
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
     });
+  }
+
+  Future<void> _loadOutfits() async {
+    final rows = await _db.query('outfits');
+    final outfits = rows.map((row) => row['name'] as String).toList();
+    setState(() => _allOutfits = outfits);
   }
 
   List<String> _getEventsForDay(DateTime day) {
@@ -72,32 +79,42 @@ class _PlannerPageState extends State<PlannerPage> {
   }
 
   void _showAddEventDialog() {
-    final controller = TextEditingController();
+    String? selectedOutfit;
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Add Outfit Plan'),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(labelText: 'Outfit Name'),
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Outfit Plan'),
+          content: _allOutfits.isEmpty
+              ? const Text('No outfits available.')
+              : DropdownButtonFormField<String>(
+                  value: selectedOutfit,
+                  items: _allOutfits
+                      .map((name) =>
+                          DropdownMenuItem(value: name, child: Text(name)))
+                      .toList(),
+                  onChanged: (value) {
+                    selectedOutfit = value;
+                  },
+                  decoration: const InputDecoration(labelText: 'Select Outfit'),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (controller.text.isNotEmpty) {
-                    await _addEvent(controller.text);
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          ),
+            ElevatedButton(
+              onPressed: () async {
+                if (selectedOutfit != null) {
+                  await _addEvent(selectedOutfit!);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -129,25 +146,26 @@ class _PlannerPageState extends State<PlannerPage> {
               });
               _selectedEvents.value = _getEventsForDay(selectedDay);
             },
-            onFormatChanged:
-                (format) => setState(() => _calendarFormat = format),
+            onFormatChanged: (format) =>
+                setState(() => _calendarFormat = format),
             eventLoader: _getEventsForDay,
           ),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: _showAddEventDialog,
+            onPressed: _allOutfits.isEmpty ? null : _showAddEventDialog,
             child: const Text('Add Outfit Plan'),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: ValueListenableBuilder<List<String>>(
               valueListenable: _selectedEvents,
-              builder:
-                  (context, value, _) => ListView.builder(
-                    itemCount: value.length,
-                    itemBuilder:
-                        (context, index) => ListTile(title: Text(value[index])),
-                  ),
+              builder: (context, value, _) => ListView.builder(
+                itemCount: value.length,
+                itemBuilder: (context, index) => ListTile(
+                  title: Text(value[index]),
+                  leading: const Icon(Icons.checkroom),
+                ),
+              ),
             ),
           ),
         ],

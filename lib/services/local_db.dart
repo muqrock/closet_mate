@@ -62,7 +62,6 @@ class DBHelper {
     ''');
   }
 
-
   // 👕 ITEMS METHODS
   Future<int> addItem(Map<String, dynamic> item) async {
     try {
@@ -110,5 +109,20 @@ class DBHelper {
   Future<int> deleteOutfit(int id) async {
     final db = await database;
     return await db.delete('outfits', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // 📊 ITEM & OUTFIT COUNTS
+  Future<int> getItemCount() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM items'),
+    ) ?? 0;
+  }
+
+  Future<int> getOutfitCount() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM outfits'),
+    ) ?? 0;
   }
 }

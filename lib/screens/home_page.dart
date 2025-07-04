@@ -6,13 +6,14 @@ import 'dart:html' as html; // Add this (only for web)
 import 'package:flutter/foundation.dart'; // for kIsWeb
 
 import 'add_item_page.dart';
-
+import '../services/local_db.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'wardrobe_page.dart';
 import 'planner_page.dart';
 
 import 'settings_page.dart';
+import 'create_outfit_page.dart'; // Add this import if the class exists in this file
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,37 +38,27 @@ class _HomePageState extends State<HomePage> {
     try {
       final XFile? image = await picker.pickImage(source: source);
       if (image != null) {
-        Navigator.pop(context); // Close bottom sheet FIRST
-
-        if (kIsWeb) {
-          final bytes = await image.readAsBytes();
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddItemsPage(imageBytes: bytes, isWeb: true),
-            ),
-          );
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      AddItemsPage(imageFile: File(image.path), isWeb: false),
-            ),
-          );
-        }
+        setState(() {
+          _selectedImage = image;
+        });
+        print('Image picked: ${_selectedImage!.path}');
+        // TODO: Navigate to Add Item Details screen
       }
     } catch (e) {
-      Navigator.pop(context); // Close bottom sheet on error too
+      print('Failed to pick image: $e');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
     }
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_pages.isEmpty) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       body: SafeArea(child: _pages[_currentIndex]),
       floatingActionButton:
@@ -75,9 +66,9 @@ class _HomePageState extends State<HomePage> {
               ? FloatingActionButton(
                 onPressed: () => _showAddOptionsDialog(context),
                 backgroundColor: Colors.deepOrange,
+                child: const Icon(Icons.add, size: 30),
                 shape: const CircleBorder(),
                 elevation: 6,
-                child: const Icon(Icons.add, size: 30),
               )
               : null,
       bottomNavigationBar: BottomNavigationBar(
@@ -86,10 +77,10 @@ class _HomePageState extends State<HomePage> {
         selectedItemColor: Colors.deepOrange,
         unselectedItemColor: Colors.grey,
         onTap: (index) => setState(() => _currentIndex = index),
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           BottomNavigationBarItem(
-            icon: Icon(MdiIcons.wardrobe),
+            icon: Icon(MdiIcons.tshirtCrew),
             label: 'Wardrobe',
           ),
           BottomNavigationBarItem(
@@ -126,7 +117,12 @@ class _HomePageState extends State<HomePage> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  _showImageSourceSelection(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddItemsPage(isWeb: kIsWeb),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.add_box),
                 label: const Text('Add Item'),
@@ -139,11 +135,17 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context);
-                  print('Create Outfit tapped');
+                  Navigator.pop(context); // close bottom sheet
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CreateOutfitPage(),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.checkroom),
                 label: const Text('Create Outfit'),
@@ -217,109 +219,146 @@ class _HomePageState extends State<HomePage> {
 }
 
 // Profile Tab with Firebase data
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
+
+  @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  int _itemCount = 0;
+  int _outfitCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounts();
+  }
+
+  Future<void> _loadCounts() async {
+    final dbHelper = DBHelper.instance; // Use the named constructor or singleton instance
+    final itemCount = await dbHelper.getItemCount();
+    final outfitCount = await dbHelper.getOutfitCount();
+    setState(() {
+      _itemCount = itemCount;
+      _outfitCount = outfitCount;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return const Center(child: Text("Not logged in"));
+      return const Scaffold(
+        body: Center(child: Text("Not logged in")),
+      );
     }
 
     final userDoc = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid);
 
-    return FutureBuilder<DocumentSnapshot>(
-      future: userDoc.get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("My Profile"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadCounts,
+            tooltip: 'Refresh Counts',
+          ),
+        ],
+      ),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: userDoc.get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Center(child: Text("User data not found"));
-        }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text("User data not found"));
+          }
 
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-        final fullName = userData['fullName'] ?? 'No Name';
-        final username = userData['username'] ?? 'No Username';
+          final userData = snapshot.data!.data() as Map<String, dynamic>;
+          final fullName = userData['fullName'] ?? 'No Name';
+          final username = userData['username'] ?? 'No Username';
 
-        return Column(
-          children: [
-            Container(
-              color: const Color(0xFFFF914D),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const CircleAvatar(
-                    radius: 45,
-                    backgroundImage: NetworkImage(
-                      'https://randomuser.me/api/portraits/men/75.jpg',
+          return Column(
+            children: [
+              Container(
+                color: const Color(0xFFFF914D),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    const CircleAvatar(
+                      radius: 45,
+                      backgroundImage: NetworkImage(
+                        'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    fullName,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    const SizedBox(height: 10),
+                    Text(
+                      fullName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '@$username',
-                    style: const TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
+                    Text(
+                      '@$username',
+                      style: const TextStyle(fontSize: 14, color: Colors.white70),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatButton('items'),
-                        _buildStatButton('outfits'),
-                      ],
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildStatCard('Items', _itemCount),
+                          _buildStatCard('Outfits', _outfitCount),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const Expanded(
-              child: Center(
-                child: Text(
-                  'Scroll down for more features...',
-                  style: TextStyle(color: Colors.grey),
+                  ],
                 ),
               ),
-            ),
-          ],
-        );
-      },
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    'Scroll down for more features...',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildStatButton(String type) {
-    String label = type == 'items' ? 'Items' : 'Outfits';
+  Widget _buildStatCard(String label, int count) {
     return Column(
       children: [
-        const Text(
-          '0',
-          style: TextStyle(
+        Text(
+          count.toString(),
+          style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.deepOrange,
