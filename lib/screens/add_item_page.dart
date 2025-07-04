@@ -1,260 +1,132 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart'; // for kIsWeb
+import 'package:image_picker/image_picker.dart';
+import '../services/local_db.dart';
 
-class AddItemPage extends StatefulWidget {
-  final File? imageFile; // For mobile/desktop
-  final Uint8List? imageBytes; // For web
+class AddItemsPage extends StatefulWidget {
+  final File? imageFile;
+  final Uint8List? imageBytes;
   final bool isWeb;
 
-  const AddItemPage({
-    super.key,
-    this.imageFile,
-    this.imageBytes,
-    required this.isWeb,
-  });
+  const AddItemsPage({Key? key, this.imageFile, this.imageBytes, required this.isWeb}) : super(key: key);
+
 
   @override
-  State<AddItemPage> createState() => _AddItemPageState();
+  State<AddItemsPage> createState() => _AddItemsPageState();
 }
 
-class _AddItemPageState extends State<AddItemPage> {
-  final TextEditingController _brandController = TextEditingController();
-  final TextEditingController _sizeController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _tagsController = TextEditingController();
+class _AddItemsPageState extends State<AddItemsPage> {
+  final Map<String, List<String>> _itemsByCategory = {
+    'Head': [],
+    'Top': [],
+    'Bottom': [],
+    'Shoes': [],
+    'Accessories': [],
+  };
 
-  DateTime? _selectedDate;
-  String _selectedCategory = 'T-shirt';
-  bool _private = true;
+  final ImagePicker _picker = ImagePicker();
 
-  final List<String> _colors = [];
-  final List<String> _tags = [];
+  Future<void> _pickAndAddImage(String category) async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final path = image.path;
 
-  void _pickDate() async {
-    final DateTime? date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-    );
-    if (date != null) setState(() => _selectedDate = date);
-  }
+      // Save to SQLite
+      await DBHelper.instance.addItem({
+        'category': category,
+        'imagePath': path,
+      });
 
-  void _addColor(String color) {
-    if (!_colors.contains(color)) {
-      setState(() => _colors.add(color));
+      setState(() {
+        _itemsByCategory[category]!.add(path);
+      });
     }
   }
 
-  void _addTag(String tag) {
-    if (tag.trim().isNotEmpty && !_tags.contains(tag)) {
-      setState(() => _tags.add(tag.trim()));
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadItemsFromDB();
   }
 
-  void _saveItem() {
-    // TODO: Upload to Firestore and Storage
-    print('Saving item...');
-  }
-
-  void _showSizePicker() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        final sizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'];
-
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          itemCount: sizes.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final size = sizes[index];
-            return ListTile(
-              title: Text(size),
-              onTap: () {
-                setState(() {
-                  _sizeController.text = size;
-                });
-                Navigator.pop(context);
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildImagePreview() {
-    if (widget.isWeb) {
-      if (widget.imageBytes != null) {
-        return Image.memory(widget.imageBytes!, height: 200);
-      } else {
-        return const Icon(Icons.error, size: 200, color: Colors.red);
+  Future<void> _loadItemsFromDB() async {
+    final items = await DBHelper.instance.getItems();
+    for (var item in items) {
+      final category = item['category'];
+      final path = item['imagePath'];
+      if (_itemsByCategory.containsKey(category)) {
+        _itemsByCategory[category]!.add(path);
       }
-    } else {
-      return Image.file(widget.imageFile!, height: 200);
     }
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Review Item'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
-        centerTitle: true,
+        title: const Text("Add Your Items"),
+        backgroundColor: Colors.deepOrange,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: _buildImagePreview()),
-            const SizedBox(height: 20),
-
-            _buildLabel('Category'),
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              items:
-                  ['T-shirt', 'Pants', 'Outerwear', 'Shoes']
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-              onChanged: (value) => setState(() => _selectedCategory = value!),
-            ),
-
-            const SizedBox(height: 16),
-            _buildLabel('Colors'),
-            Wrap(
-              spacing: 8,
-              children:
-                  _colors
-                      .map(
-                        (color) => Chip(
-                          label: Text(color),
-                          onDeleted:
-                              () => setState(() => _colors.remove(color)),
+          children:
+              _itemsByCategory.keys.map((category) {
+                final items = _itemsByCategory[category]!;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          category,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      )
-                      .toList(),
-            ),
-            TextField(
-              decoration: const InputDecoration(hintText: 'Add a color'),
-              onSubmitted: _addColor,
-            ),
-
-            const SizedBox(height: 16),
-            _buildLabel('Tags'),
-            Wrap(
-              spacing: 8,
-              children:
-                  _tags
-                      .map(
-                        (tag) => Chip(
-                          label: Text(tag),
-                          onDeleted: () => setState(() => _tags.remove(tag)),
+                        IconButton(
+                          onPressed: () => _pickAndAddImage(category),
+                          icon: const Icon(
+                            Icons.add_circle,
+                            color: Colors.deepOrange,
+                          ),
                         ),
-                      )
-                      .toList(),
-            ),
-            TextField(
-              controller: _tagsController,
-              decoration: const InputDecoration(hintText: 'Add a tag'),
-              onSubmitted: (value) {
-                _addTag(value);
-                _tagsController.clear();
-              },
-            ),
-
-            const SizedBox(height: 16),
-            _buildLabel('Brand'),
-            TextField(controller: _brandController),
-
-            const SizedBox(height: 16),
-            _buildLabel('Size'),
-            GestureDetector(
-              onTap: _showSizePicker,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  controller: _sizeController,
-                  decoration: const InputDecoration(
-                    hintText: 'Select size',
-                    suffixIcon: Icon(Icons.keyboard_arrow_down),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-            _buildLabel('Price'),
-            TextField(
-              controller: _priceController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(prefixText: 'RM '),
-            ),
-
-            const SizedBox(height: 16),
-            _buildLabel('Date Purchased'),
-            Row(
-              children: [
-                Text(
-                  _selectedDate == null
-                      ? 'No date selected'
-                      : DateFormat.yMMMd().format(_selectedDate!),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: _pickDate,
-                  child: const Text('Select Date'),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-            _buildLabel('Visibility'),
-            SwitchListTile(
-              title: const Text('Private'),
-              value: _private,
-              onChanged: (val) => setState(() => _private = val),
-            ),
-
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      print('Review later');
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Review Later'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _saveItem,
-                    child: const Text('Save'),
-                  ),
-                ),
-              ],
-            ),
-          ],
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 100,
+                      child:
+                          items.isEmpty
+                              ? const Center(child: Text("No items yet"))
+                              : ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: items.length,
+                                separatorBuilder:
+                                    (_, __) => const SizedBox(width: 10),
+                                itemBuilder: (context, index) {
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(items[index]),
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              }).toList(),
         ),
       ),
     );
   }
-
-  Widget _buildLabel(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 6),
-    child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
-  );
 }

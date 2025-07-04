@@ -44,7 +44,7 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddItemPage(imageBytes: bytes, isWeb: true),
+              builder: (context) => AddItemsPage(imageBytes: bytes, isWeb: true),
             ),
           );
         } else {
@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage> {
             MaterialPageRoute(
               builder:
                   (context) =>
-                      AddItemPage(imageFile: File(image.path), isWeb: false),
+                      AddItemsPage(imageFile: File(image.path), isWeb: false),
             ),
           );
         }
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
         selectedItemColor: Colors.deepOrange,
         unselectedItemColor: Colors.grey,
         onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
+        items: [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           BottomNavigationBarItem(
             icon: Icon(MdiIcons.wardrobe),
