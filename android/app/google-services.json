@@ -12,7 +12,12 @@
           "package_name": "com.example.closet_mate"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "804894967830-j882eb597ak4nv41mp78nqq135thlirq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDGUyvLIo1VVLhEyHTpfNVScpGmC-7mBbs"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "804894967830-j882eb597ak4nv41mp78nqq135thlirq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "804894967830-q5dl07obcn5cvt0tn5k0onb1fuktv37i.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.closetMate"
+              }
+            }
+          ]
         }
       }
     }

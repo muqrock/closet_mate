@@ -3,6 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart'; // for kIsWeb
+import 'package:supabase_flutter/supabase_flutter.dart'
+    as supabase_flutter; // <--- ADD 'as supabase_flutter' here
+import 'package:uuid/uuid.dart'; // For generating unique IDs
+import 'package:firebase_auth/firebase_auth.dart'; // This import remains as is
 
 class AddItemPage extends StatefulWidget {
   final File? imageFile; // For mobile/desktop
@@ -33,6 +37,20 @@ class _AddItemPageState extends State<AddItemPage> {
   final List<String> _colors = [];
   final List<String> _tags = [];
 
+  final Uuid _uuid = const Uuid(); // Initialize Uuid for unique IDs
+  // Now, SupabaseClient is available directly because it's not conflicted
+  final supabase_flutter.SupabaseClient supabase =
+      supabase_flutter.Supabase.instance.client; // <--- USE THE PREFIX HERE
+
+  @override
+  void dispose() {
+    _brandController.dispose();
+    _sizeController.dispose();
+    _priceController.dispose();
+    _tagsController.dispose();
+    super.dispose();
+  }
+
   void _pickDate() async {
     final DateTime? date = await showDatePicker(
       context: context,
@@ -55,9 +73,54 @@ class _AddItemPageState extends State<AddItemPage> {
     }
   }
 
-  void _saveItem() {
-    // TODO: Upload to Firestore and Storage
-    print('Saving item...');
+  Future<void> _saveItem() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Not authenticated')),
+      );
+      return;
+    }
+
+    // 1. Create user-specific folder path
+    final String userFolder = user.uid; // Firebase UID as folder name
+    final String itemId = _uuid.v4();
+    final String imagePath = '$userFolder/$itemId.png'; // Nested path
+
+    try {
+      // 2. Upload to user's folder
+      if (kIsWeb && widget.imageBytes != null) {
+        await supabase.storage.from('outfitimage').uploadBinary(
+              imagePath,
+              widget.imageBytes!,
+              fileOptions: const supabase_flutter.FileOptions(
+                contentType: 'image/png',
+              ),
+            );
+      } else if (widget.imageFile != null) {
+        await supabase.storage.from('outfitimage').upload(
+              imagePath,
+              widget.imageFile!,
+              fileOptions: const supabase_flutter.FileOptions(
+                contentType: 'image/png',
+              ),
+            );
+      }
+
+      // 3. Get public URL (if bucket is public)
+      final imageUrl =
+          supabase.storage.from('outfitimage').getPublicUrl(imagePath);
+
+      // 4. Save to database
+      await supabase.from('items').insert({
+        'id': itemId,
+        'user_id': user.uid,
+        'image_path': imagePath, // Store the full path
+        // ... other fields
+      });
+    } catch (e) {
+      print('Upload error: $e');
+    }
   }
 
   void _showSizePicker() {
@@ -91,14 +154,20 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   Widget _buildImagePreview() {
-    if (widget.isWeb) {
+    // This now uses kIsWeb directly, which is generally more robust
+    if (kIsWeb) {
       if (widget.imageBytes != null) {
         return Image.memory(widget.imageBytes!, height: 200);
       } else {
         return const Icon(Icons.error, size: 200, color: Colors.red);
       }
     } else {
-      return Image.file(widget.imageFile!, height: 200);
+      // Assuming non-web platforms always have imageFile
+      if (widget.imageFile != null) {
+        return Image.file(widget.imageFile!, height: 200);
+      } else {
+        return const Icon(Icons.error, size: 200, color: Colors.red);
+      }
     }
   }
 
@@ -120,50 +189,43 @@ class _AddItemPageState extends State<AddItemPage> {
           children: [
             Center(child: _buildImagePreview()),
             const SizedBox(height: 20),
-
             _buildLabel('Category'),
             DropdownButtonFormField<String>(
               value: _selectedCategory,
-              items:
-                  ['T-shirt', 'Pants', 'Outerwear', 'Shoes']
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
+              items: ['T-shirt', 'Pants', 'Outerwear', 'Shoes']
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                  .toList(),
               onChanged: (value) => setState(() => _selectedCategory = value!),
             ),
-
             const SizedBox(height: 16),
             _buildLabel('Colors'),
             Wrap(
               spacing: 8,
-              children:
-                  _colors
-                      .map(
-                        (color) => Chip(
-                          label: Text(color),
-                          onDeleted:
-                              () => setState(() => _colors.remove(color)),
-                        ),
-                      )
-                      .toList(),
+              children: _colors
+                  .map(
+                    (color) => Chip(
+                      label: Text(color),
+                      onDeleted: () => setState(() => _colors.remove(color)),
+                    ),
+                  )
+                  .toList(),
             ),
             TextField(
               decoration: const InputDecoration(hintText: 'Add a color'),
               onSubmitted: _addColor,
             ),
-
             const SizedBox(height: 16),
             _buildLabel('Tags'),
             Wrap(
               spacing: 8,
-              children:
-                  _tags
-                      .map(
-                        (tag) => Chip(
-                          label: Text(tag),
-                          onDeleted: () => setState(() => _tags.remove(tag)),
-                        ),
-                      )
-                      .toList(),
+              children: _tags
+                  .map(
+                    (tag) => Chip(
+                      label: Text(tag),
+                      onDeleted: () => setState(() => _tags.remove(tag)),
+                    ),
+                  )
+                  .toList(),
             ),
             TextField(
               controller: _tagsController,
@@ -173,11 +235,9 @@ class _AddItemPageState extends State<AddItemPage> {
                 _tagsController.clear();
               },
             ),
-
             const SizedBox(height: 16),
             _buildLabel('Brand'),
             TextField(controller: _brandController),
-
             const SizedBox(height: 16),
             _buildLabel('Size'),
             GestureDetector(
@@ -192,7 +252,6 @@ class _AddItemPageState extends State<AddItemPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
             _buildLabel('Price'),
             TextField(
@@ -200,7 +259,6 @@ class _AddItemPageState extends State<AddItemPage> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(prefixText: 'RM '),
             ),
-
             const SizedBox(height: 16),
             _buildLabel('Date Purchased'),
             Row(
@@ -217,7 +275,6 @@ class _AddItemPageState extends State<AddItemPage> {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
             _buildLabel('Visibility'),
             SwitchListTile(
@@ -225,7 +282,6 @@ class _AddItemPageState extends State<AddItemPage> {
               value: _private,
               onChanged: (val) => setState(() => _private = val),
             ),
-
             const SizedBox(height: 20),
             Row(
               children: [
@@ -241,7 +297,8 @@ class _AddItemPageState extends State<AddItemPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _saveItem,
+                    onPressed:
+                        _saveItem, // This calls the Supabase saving logic
                     child: const Text('Save'),
                   ),
                 ),
@@ -254,7 +311,7 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   Widget _buildLabel(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 6),
-    child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
-  );
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+      );
 }
