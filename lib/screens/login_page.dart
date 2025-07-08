@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
               Center(
                 child: Column(
                   children: [
-                    Image.asset('assets/logo.png', height: 100),
+                    Image.asset('assets/closetmate.jpg', height: 100),
                     const SizedBox(height: 16),
                     const Text(
                       'Welcome to Closet Mate!',
