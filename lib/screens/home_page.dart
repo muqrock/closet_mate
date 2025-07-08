@@ -64,7 +64,14 @@ class _HomePageState extends State<HomePage> {
                   imageBytes: bytes,
                 ),
           ),
-        );
+        ).then((result) {
+          if (result == true) {
+            // 👇 Refresh state manually
+            setState(() {
+              _pages[0] = const ProfileTab(); // reload ProfileTab
+            });
+          }
+        });
       }
     } catch (e) {
       print('Failed to pick image: $e');

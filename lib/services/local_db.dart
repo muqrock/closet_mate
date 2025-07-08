@@ -19,7 +19,8 @@ class DBHelper {
     final path = join(dbPath, 'closetmate.db');
     return await openDatabase(
       path,
-      version: 3, // ⬆️ Bumped to v3 to support full item details
+      version: 4, // ⬆️ bumped from 3 to 4 to support mainCategory
+
       onCreate: _onCreate,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -33,6 +34,9 @@ class DBHelper {
           await db.execute('ALTER TABLE items ADD COLUMN colors TEXT');
           await db.execute('ALTER TABLE items ADD COLUMN private INTEGER');
           await db.execute('ALTER TABLE items ADD COLUMN datePurchased TEXT');
+        }
+        if (oldVersion < 4) {
+          await db.execute('ALTER TABLE items ADD COLUMN mainCategory TEXT');
         }
       },
     );

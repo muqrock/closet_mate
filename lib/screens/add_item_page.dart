@@ -27,6 +27,17 @@ class _AddItemPageState extends State<AddItemPage> {
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
 
+  final Map<String, List<String>> _categoryMap = {
+    'Tops': ['T-shirt', 'Hoodie', 'Activewear', 'Other'],
+    'Bottoms': ['Skirts', 'Trouser', 'Shorts', 'Jeans', 'Activewear', 'Other'],
+    'Outerwear': ['Coats', 'Jackets', 'Capes', 'Other'],
+    'Underwear & Nightwear': ['Underwear', 'Nightwear'],
+    'Accessories': ['Ties', 'Scarves', 'Gloves', 'Socks', 'Other'],
+    'Footwear': ['Flats', 'Sandals', 'Boots', 'Sport Shoes', 'Other'],
+  };
+  String? _selectedMainCategory;
+  String? _selectedSubCategory;
+
   DateTime? _selectedDate;
   String _selectedCategory = 'T-shirt';
   bool _private = true;
@@ -69,6 +80,9 @@ class _AddItemPageState extends State<AddItemPage> {
     final itemData = {
       'imagePath': imagePath,
       'category': _selectedCategory,
+      'mainCategory': _selectedMainCategory ?? '',
+      'category': _selectedSubCategory ?? '',
+
       'brand': _brandController.text.trim(),
       'size': _sizeController.text.trim(),
       'price': _priceController.text.trim(),
@@ -79,6 +93,7 @@ class _AddItemPageState extends State<AddItemPage> {
     };
 
     await DBHelper.instance.addItem(itemData);
+    print("✅ Item saved to DB");
 
     ScaffoldMessenger.of(
       context,
@@ -151,15 +166,58 @@ class _AddItemPageState extends State<AddItemPage> {
             Center(child: _buildImagePreview()),
             const SizedBox(height: 20),
 
-            _buildLabel('Category'),
+            // 🌟 Main Category Dropdown
+            _buildLabel('Main Category'),
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              value: _selectedMainCategory,
+              decoration: const InputDecoration(
+                hintText: 'Select main category',
+              ),
               items:
-                  ['T-shirt', 'Pants', 'Outerwear', 'Shoes']
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-              onChanged: (value) => setState(() => _selectedCategory = value!),
+                  _categoryMap.keys.map((mainCat) {
+                    return DropdownMenuItem(
+                      value: mainCat,
+                      child: Text(mainCat),
+                    );
+                  }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedMainCategory = value;
+                  _selectedSubCategory = null; // Reset subcategory
+                });
+              },
             ),
+
+            const SizedBox(height: 16),
+
+            // 🌟 Sub Category Dropdown (only show if main category is selected)
+            if (_selectedMainCategory != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildLabel('Sub Category'),
+                  DropdownButtonFormField<String>(
+                    value: _selectedSubCategory,
+                    decoration: const InputDecoration(
+                      hintText: 'Select sub category',
+                    ),
+                    items:
+                        _categoryMap[_selectedMainCategory]!
+                            .map(
+                              (sub) => DropdownMenuItem(
+                                value: sub,
+                                child: Text(sub),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSubCategory = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
 
             const SizedBox(height: 16),
             _buildLabel('Colors'),
