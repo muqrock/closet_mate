@@ -250,10 +250,22 @@ class _ProfileTabState extends State<ProfileTab> {
   int _itemCount = 0;
   int _outfitCount = 0;
 
+  List<Map<String, dynamic>> _items = [];
+
   @override
   void initState() {
     super.initState();
     _loadCounts();
+    _loadItems(); // 👈 Load saved items
+  }
+
+  Future<void> _loadItems() async {
+    final dbHelper = DBHelper.instance;
+    final loadedItems =
+        await dbHelper.getItems(); // Assuming this method exists
+    setState(() {
+      _items = loadedItems;
+    });
   }
 
   Future<void> _loadCounts() async {
@@ -360,13 +372,30 @@ class _ProfileTabState extends State<ProfileTab> {
                   ],
                 ),
               ),
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    'Scroll down for more features...',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
+              Expanded(
+                child:
+                    _items.isEmpty
+                        ? Center(
+                          child: const Text(
+                            'Scroll down for more features...',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                        : GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.75,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          itemCount: _items.length,
+                          itemBuilder: (context, index) {
+                            final item = _items[index];
+                            return _buildItemCard(item);
+                          },
+                        ),
               ),
             ],
           );
@@ -392,6 +421,55 @@ class _ProfileTabState extends State<ProfileTab> {
           style: const TextStyle(fontSize: 16, color: Colors.black54),
         ),
       ],
+    );
+  }
+
+  Widget _buildItemCard(Map<String, dynamic> item) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+              child:
+                  item['image_path'] != null &&
+                          File(item['image_path']).existsSync()
+                      ? Image.file(File(item['image_path']), fit: BoxFit.cover)
+                      : const Center(child: Icon(Icons.image_not_supported)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['brand'] ?? 'No Brand',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  item['category'] ?? 'Unknown Category',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

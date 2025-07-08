@@ -24,12 +24,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  final List<String> _genders = [
-    'Male',
-    'Female',
-    'Non-binary',
-    'Prefer not to say',
-  ];
+  final List<String> _genders = ['Male', 'Female'];
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -161,7 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
               Center(
                 child: Column(
                   children: [
-                    Image.asset('assets/logo.png', height: 100),
+                    Image.asset('assets/closetmate.jpg', height: 100),
                     const SizedBox(height: 16),
                     const Text(
                       'Create Your Closet Mate Account',
