@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart'; // Import for image_picker
 import 'create_outfit_page.dart';
 import '../services/local_db.dart';
+import 'home_page.dart'; // Assuming home_page.dart is in the same directory or adjust path
 
 class WardrobePage extends StatefulWidget {
   const WardrobePage({super.key});
@@ -475,6 +477,160 @@ class _WardrobePageState extends State<WardrobePage>
     );
   }
 
+  // Updated method to show add item/outfit options with same UI as home_page.dart
+  void _showAddOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'What would you like to do?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context); // Close bottom sheet
+                  _showImageSourceOptions(); // Show camera/gallery options
+                },
+                icon: const Icon(Icons.add_box),
+                label: const Text('Add Item'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.shade100,
+                  foregroundColor: Colors.deepOrange,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context); // Close bottom sheet
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CreateOutfitPage()),
+                  );
+                  if (result == true) {
+                    _loadData(); // Reload data if outfit added/edited
+                  }
+                },
+                icon: const Icon(Icons.checkroom),
+                label: const Text('Create Outfit'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange.shade100,
+                  foregroundColor: Colors.deepOrange,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Updated method to show image source options with same UI as home_page.dart
+  void _showImageSourceOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Choose image source',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final pickedFile = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                  );
+                  if (pickedFile != null) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => HomePage(
+                              initialImagePath: pickedFile.path,
+                              navigateToAddItem: true,
+                            ),
+                      ),
+                      (Route<dynamic> route) => false,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Take Photo'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade100,
+                  foregroundColor: Colors.blue,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final pickedFile = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (pickedFile != null) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => HomePage(
+                              initialImagePath: pickedFile.path,
+                              navigateToAddItem: true,
+                            ),
+                      ),
+                      (Route<dynamic> route) => false,
+                    );
+                  }
+                },
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Choose from Gallery'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade100,
+                  foregroundColor: Colors.green,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -800,33 +956,17 @@ class _WardrobePageState extends State<WardrobePage>
           ],
         ),
         child: FloatingActionButton.extended(
-          onPressed: () async {
-            if (_tabController.index == 0) {
-              // If on Items tab, navigate to home to add item
-              Navigator.pop(context);
-            } else {
-              // If on Outfits tab, create outfit
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateOutfitPage(),
-                ),
-              );
-              if (result == true) {
-                _loadData();
-              }
-            }
-          },
-          label: Text(
-            _tabController.index == 0 ? "Add Item" : "Add Outfit",
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
+          onPressed: _showAddOptions, // Call the new method here
+          label: const Text(
+            "Add New",
+            style: TextStyle(
               color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
           ),
           icon: const Icon(Icons.add, color: Colors.white),
           backgroundColor: const Color(0xFFFF5722),
-          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),

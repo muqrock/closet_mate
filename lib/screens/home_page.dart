@@ -16,7 +16,14 @@ import 'settings_page.dart';
 import 'create_outfit_page.dart'; // Add this import if the class exists in this file
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String? initialImagePath;
+  final bool navigateToAddItem;
+
+  const HomePage({
+    super.key,
+    this.initialImagePath,
+    this.navigateToAddItem = false,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -111,6 +118,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Show options to add item or create outfit
   void _showAddOptionsDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
