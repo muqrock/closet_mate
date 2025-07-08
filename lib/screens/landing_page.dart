@@ -23,7 +23,7 @@ class LandingPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 60),
-            Image.asset('assets/logo.png', height: 120),
+            Image.asset('assets/closetmate.jpg', height: 120),
             const SizedBox(height: 20),
             const Text(
               'Closet Mate',
