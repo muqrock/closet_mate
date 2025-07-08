@@ -246,6 +246,9 @@ class ProfileTab extends StatefulWidget {
   State<ProfileTab> createState() => _ProfileTabState();
 }
 
+String _selectedCategory = 'All';
+Set<String> _availableCategories = {'All'};
+
 class _ProfileTabState extends State<ProfileTab> {
   int _itemCount = 0;
   int _outfitCount = 0;
@@ -261,10 +264,27 @@ class _ProfileTabState extends State<ProfileTab> {
 
   Future<void> _loadItems() async {
     final dbHelper = DBHelper.instance;
-    final loadedItems =
-        await dbHelper.getItems(); // Assuming this method exists
+    final loadedItems = await dbHelper.getItems();
+
+    final categories = <String>{'All'};
+    for (var item in loadedItems) {
+      final category = item['category'] ?? '';
+      if (category.isNotEmpty) {
+        if (category.toLowerCase().contains('top')) {
+          categories.add('Tops');
+        } else if (category.toLowerCase().contains('bottom') ||
+            category.toLowerCase().contains('pants') ||
+            category.toLowerCase().contains('jeans')) {
+          categories.add('Bottoms');
+        } else {
+          categories.add(category);
+        }
+      }
+    }
+
     setState(() {
       _items = loadedItems;
+      _availableCategories = categories;
     });
   }
 
@@ -316,10 +336,26 @@ class _ProfileTabState extends State<ProfileTab> {
           final userData = snapshot.data!.data() as Map<String, dynamic>;
           final fullName = userData['fullName'] ?? 'No Name';
           final username = userData['username'] ?? 'No Username';
+          final filteredItems =
+              _selectedCategory == 'All'
+                  ? _items
+                  : _items.where((item) {
+                    final category =
+                        (item['category'] ?? '').toString().toLowerCase();
+                    if (_selectedCategory == 'Tops') {
+                      return category.contains('top');
+                    } else if (_selectedCategory == 'Bottoms') {
+                      return category.contains('bottom') ||
+                          category.contains('pants') ||
+                          category.contains('jeans');
+                    }
+                    return category == _selectedCategory.toLowerCase();
+                  }).toList();
 
           return Column(
             children: [
               Container(
+                // 🔸 Orange profile header
                 color: const Color(0xFFFF914D),
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -372,15 +408,46 @@ class _ProfileTabState extends State<ProfileTab> {
                   ],
                 ),
               ),
+
+              // 🎯 PUT THE CATEGORY FILTER WIDGET HERE
+              if (_items.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children:
+                          _availableCategories.map((category) {
+                            final isSelected = _selectedCategory == category;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(category),
+                                selected: isSelected,
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedCategory = category;
+                                  });
+                                },
+                                selectedColor: Colors.deepOrange,
+                                backgroundColor: Colors.grey.shade200,
+                                labelStyle: TextStyle(
+                                  color:
+                                      isSelected ? Colors.white : Colors.black,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                    ),
+                  ),
+                ),
+
+              // 📦 THEN THE ITEM LIST BELOW
               Expanded(
                 child:
                     _items.isEmpty
-                        ? Center(
-                          child: const Text(
-                            'Scroll down for more features...',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
+                        ? const Center(child: Text('No items found'))
                         : GridView.builder(
                           padding: const EdgeInsets.all(16),
                           gridDelegate:
@@ -390,9 +457,10 @@ class _ProfileTabState extends State<ProfileTab> {
                                 crossAxisSpacing: 16,
                                 mainAxisSpacing: 16,
                               ),
-                          itemCount: _items.length,
+                          itemCount:
+                              filteredItems.length, // ← use filtered list
                           itemBuilder: (context, index) {
-                            final item = _items[index];
+                            final item = filteredItems[index];
                             return _buildItemCard(item);
                           },
                         ),
