@@ -131,18 +131,10 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
+                  Navigator.pop(context); // Close bottom sheet
+                  _showImageSourceSelection(
                     context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => AddItemPage(
-                            isWeb: kIsWeb,
-                            imageFile: null,
-                            imageBytes: null,
-                          ),
-                    ),
-                  );
+                  ); // 🪄 Now opens camera/gallery selection
                 },
                 icon: const Icon(Icons.add_box),
                 label: const Text('Add Item'),
@@ -155,6 +147,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () {
