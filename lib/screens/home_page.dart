@@ -275,17 +275,9 @@ class _ProfileTabState extends State<ProfileTab> {
 
     final categories = <String>{'All'};
     for (var item in loadedItems) {
-      final category = item['category'] ?? '';
-      if (category.isNotEmpty) {
-        if (category.toLowerCase().contains('top')) {
-          categories.add('Tops');
-        } else if (category.toLowerCase().contains('bottom') ||
-            category.toLowerCase().contains('pants') ||
-            category.toLowerCase().contains('jeans')) {
-          categories.add('Bottoms');
-        } else {
-          categories.add(category);
-        }
+      final mainCat = item['mainCategory'] ?? '';
+      if (mainCat.toString().isNotEmpty) {
+        categories.add(mainCat);
       }
     }
 
@@ -343,20 +335,13 @@ class _ProfileTabState extends State<ProfileTab> {
           final userData = snapshot.data!.data() as Map<String, dynamic>;
           final fullName = userData['fullName'] ?? 'No Name';
           final username = userData['username'] ?? 'No Username';
+          // 🔸 Calculate item and outfit counts
           final filteredItems =
               _selectedCategory == 'All'
                   ? _items
                   : _items.where((item) {
-                    final category =
-                        (item['category'] ?? '').toString().toLowerCase();
-                    if (_selectedCategory == 'Tops') {
-                      return category.contains('top');
-                    } else if (_selectedCategory == 'Bottoms') {
-                      return category.contains('bottom') ||
-                          category.contains('pants') ||
-                          category.contains('jeans');
-                    }
-                    return category == _selectedCategory.toLowerCase();
+                    final mainCat = (item['mainCategory'] ?? '').toString();
+                    return mainCat == _selectedCategory;
                   }).toList();
 
           return Column(
