@@ -43,12 +43,37 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
   Future<void> _loadItems() async {
     final items = await DBHelper.instance.getItems();
+
     for (var item in items) {
-      final category = item['category'];
-      if (allItemsByCategory.containsKey(category)) {
-        allItemsByCategory[category]!.add(item);
+      final String itemCategory = item['category'];
+
+      // 🧠 Map actual categories to outfit slots
+      String? slot;
+      if (['Cap', 'Hat', 'Beanie'].contains(itemCategory)) {
+        slot = 'Head';
+      } else if ([
+        'T-shirt',
+        'Shirt',
+        'Outerwear',
+        'Hoodie',
+      ].contains(itemCategory)) {
+        slot = 'Top';
+      } else if (['Pants', 'Jeans', 'Shorts', 'Skirt'].contains(itemCategory)) {
+        slot = 'Bottom';
+      } else if ([
+        'Shoes',
+        'Sneakers',
+        'Boots',
+        'Sandals',
+      ].contains(itemCategory)) {
+        slot = 'Shoes';
+      }
+
+      if (slot != null && allItemsByCategory.containsKey(slot)) {
+        allItemsByCategory[slot]!.add(item);
       }
     }
+
     setState(() {});
   }
 
