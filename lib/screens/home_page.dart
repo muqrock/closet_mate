@@ -446,9 +446,9 @@ class _ProfileTabState extends State<ProfileTab> {
                 top: Radius.circular(16),
               ),
               child:
-                  item['image_path'] != null &&
-                          File(item['image_path']).existsSync()
-                      ? Image.file(File(item['image_path']), fit: BoxFit.cover)
+                  item['imagePath'] != null &&
+                          File(item['imagePath']).existsSync()
+                      ? Image.file(File(item['imagePath']), fit: BoxFit.cover)
                       : const Center(child: Icon(Icons.image_not_supported)),
             ),
           ),
