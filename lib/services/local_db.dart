@@ -19,11 +19,20 @@ class DBHelper {
     final path = join(dbPath, 'closetmate.db');
     return await openDatabase(
       path,
-      version: 2, // ⬆️ bumped version to add name column to outfits
+      version: 3, // ⬆️ Bumped to v3 to support full item details
       onCreate: _onCreate,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE outfits ADD COLUMN name TEXT');
+        }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE items ADD COLUMN brand TEXT');
+          await db.execute('ALTER TABLE items ADD COLUMN size TEXT');
+          await db.execute('ALTER TABLE items ADD COLUMN price TEXT');
+          await db.execute('ALTER TABLE items ADD COLUMN tags TEXT');
+          await db.execute('ALTER TABLE items ADD COLUMN colors TEXT');
+          await db.execute('ALTER TABLE items ADD COLUMN private INTEGER');
+          await db.execute('ALTER TABLE items ADD COLUMN datePurchased TEXT');
         }
       },
     );
@@ -45,8 +54,15 @@ class DBHelper {
     await db.execute('''
       CREATE TABLE items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        imagePath TEXT,
         category TEXT,
-        imagePath TEXT
+        brand TEXT,
+        size TEXT,
+        price TEXT,
+        tags TEXT,
+        colors TEXT,
+        private INTEGER,
+        datePurchased TEXT
       )
     ''');
 
@@ -115,14 +131,16 @@ class DBHelper {
   Future<int> getItemCount() async {
     final db = await database;
     return Sqflite.firstIntValue(
-      await db.rawQuery('SELECT COUNT(*) FROM items'),
-    ) ?? 0;
+          await db.rawQuery('SELECT COUNT(*) FROM items'),
+        ) ??
+        0;
   }
 
   Future<int> getOutfitCount() async {
     final db = await database;
     return Sqflite.firstIntValue(
-      await db.rawQuery('SELECT COUNT(*) FROM outfits'),
-    ) ?? 0;
+          await db.rawQuery('SELECT COUNT(*) FROM outfits'),
+        ) ??
+        0;
   }
 }

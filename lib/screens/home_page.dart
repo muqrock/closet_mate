@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'dart:html' as html; // Add this (only for web)
+// Add this (only for web)
 import 'package:flutter/foundation.dart'; // for kIsWeb
+import 'dart:io';
 
 import 'add_item_page.dart';
 import '../services/local_db.dart';
@@ -41,16 +41,31 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           _selectedImage = image;
         });
-        print('Image picked: ${_selectedImage!.path}');
-        // TODO: Navigate to Add Item Details screen
+
+        Navigator.pop(context); // Close the bottom sheet
+
+        final Uint8List? bytes = kIsWeb ? await image.readAsBytes() : null;
+
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => AddItemPage(
+                  isWeb: kIsWeb,
+                  imageFile: kIsWeb ? null : File(image.path),
+                  imageBytes: bytes,
+                ),
+          ),
+        );
       }
     } catch (e) {
       print('Failed to pick image: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
     }
-    Navigator.pop(context);
   }
 
   @override
@@ -66,9 +81,9 @@ class _HomePageState extends State<HomePage> {
               ? FloatingActionButton(
                 onPressed: () => _showAddOptionsDialog(context),
                 backgroundColor: Colors.deepOrange,
-                child: const Icon(Icons.add, size: 30),
                 shape: const CircleBorder(),
                 elevation: 6,
+                child: const Icon(Icons.add, size: 30),
               )
               : null,
       bottomNavigationBar: BottomNavigationBar(
@@ -120,7 +135,12 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AddItemsPage(isWeb: kIsWeb),
+                      builder:
+                          (context) => AddItemPage(
+                            isWeb: kIsWeb,
+                            imageFile: null,
+                            imageBytes: null,
+                          ),
                     ),
                   );
                 },
@@ -135,7 +155,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 12),
               ElevatedButton.icon(
                 onPressed: () {
@@ -237,7 +256,8 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Future<void> _loadCounts() async {
-    final dbHelper = DBHelper.instance; // Use the named constructor or singleton instance
+    final dbHelper =
+        DBHelper.instance; // Use the named constructor or singleton instance
     final itemCount = await dbHelper.getItemCount();
     final outfitCount = await dbHelper.getOutfitCount();
     setState(() {
@@ -251,9 +271,7 @@ class _ProfileTabState extends State<ProfileTab> {
     final User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text("Not logged in")),
-      );
+      return const Scaffold(body: Center(child: Text("Not logged in")));
     }
 
     final userDoc = FirebaseFirestore.instance
@@ -311,7 +329,10 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     Text(
                       '@$username',
-                      style: const TextStyle(fontSize: 14, color: Colors.white70),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Container(
