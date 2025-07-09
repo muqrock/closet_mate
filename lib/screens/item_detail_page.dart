@@ -27,7 +27,7 @@ class ItemDetailPage extends StatelessWidget {
         slivers: [
           // Custom App Bar with Image
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 600,
             pinned: true,
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
@@ -126,14 +126,14 @@ class ItemDetailPage extends StatelessWidget {
                 ? imageBytes != null
                     ? Image.memory(
                       imageBytes!,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       width: double.infinity,
                     )
                     : _buildPlaceholderImage()
                 : imageFile != null
                 ? Image.file(
                   imageFile!,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   width: double.infinity,
                 )
                 : _buildPlaceholderImage(),
@@ -164,41 +164,6 @@ class ItemDetailPage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color:
-                    item['private'] == 1
-                        ? Colors.orange[100]
-                        : Colors.green[100],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    item['private'] == 1 ? Icons.lock : Icons.public,
-                    size: 16,
-                    color:
-                        item['private'] == 1
-                            ? Colors.orange[700]
-                            : Colors.green[700],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    item['private'] == 1 ? 'Private' : 'Public',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          item['private'] == 1
-                              ? Colors.orange[700]
-                              : Colors.green[700],
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
