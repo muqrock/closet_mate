@@ -13,20 +13,17 @@ class CreateOutfitPage extends StatefulWidget {
 
 class _CreateOutfitPageState extends State<CreateOutfitPage> {
   final TextEditingController _nameController = TextEditingController();
-  Map<String, String?> selectedImages = {
-    'Head': null,
-    'Top': null,
-    'Bottom': null,
-    'Shoes': null,
-  };
-  Map<String, List<Map<String, dynamic>>> allItemsByCategory = {
-    'Head': [],
-    'Top': [],
-    'Bottom': [],
-    'Shoes': [],
-  };
+  Map<String, String?> selectedImages = {};
+  Map<String, List<Map<String, dynamic>>> allItemsByCategory = {};
 
   bool get isEditing => widget.outfit != null;
+  // Predefined categories for outfits
+  final List<String> predefinedCategories = [
+    'Tops',
+    'Bottoms',
+    'Footwear',
+    'Accessories',
+  ];
 
   @override
   void initState() {
@@ -43,38 +40,21 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
   Future<void> _loadItems() async {
     final items = await DBHelper.instance.getItems();
+    final Map<String, List<Map<String, dynamic>>> categorizedItems = {
+      for (var cat in predefinedCategories) cat: [],
+    };
 
     for (var item in items) {
-      final String itemCategory = item['category'];
-
-      // 🧠 Map actual categories to outfit slots
-      String? slot;
-      if (['Cap', 'Hat', 'Beanie'].contains(itemCategory)) {
-        slot = 'Head';
-      } else if ([
-        'T-shirt',
-        'Shirt',
-        'Outerwear',
-        'Hoodie',
-      ].contains(itemCategory)) {
-        slot = 'Top';
-      } else if (['Pants', 'Jeans', 'Shorts', 'Skirt'].contains(itemCategory)) {
-        slot = 'Bottom';
-      } else if ([
-        'Shoes',
-        'Sneakers',
-        'Boots',
-        'Sandals',
-      ].contains(itemCategory)) {
-        slot = 'Shoes';
-      }
-
-      if (slot != null && allItemsByCategory.containsKey(slot)) {
-        allItemsByCategory[slot]!.add(item);
+      final String? mainCategory = item['mainCategory'];
+      if (mainCategory != null && categorizedItems.containsKey(mainCategory)) {
+        categorizedItems[mainCategory]!.add(item);
       }
     }
 
-    setState(() {});
+    setState(() {
+      allItemsByCategory = categorizedItems;
+      selectedImages = {for (var cat in predefinedCategories) cat: null};
+    });
   }
 
   void _selectItem(String category, String imagePath) {
@@ -98,7 +78,9 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
             padding: const EdgeInsets.all(16),
             child:
                 items.isEmpty
-                    ? const Center(child: Text("No items found"))
+                    ? const Center(
+                      child: Text("No items found. Please add one first."),
+                    )
                     : SizedBox(
                       height: 150,
                       child: ListView.separated(
@@ -129,6 +111,8 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
   Widget _buildImageRow(String category) {
     final imagePath = selectedImages[category];
+    final hasItems = allItemsByCategory[category]?.isNotEmpty ?? false;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -155,9 +139,22 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              category,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (!hasItems)
+                  Text(
+                    "No items yet. Add one first.",
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+              ],
             ),
           ),
           IconButton(
@@ -174,10 +171,12 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
   void _saveOrUpdateOutfit() async {
     final name = _nameController.text.trim();
+
+    // extract individual paths based on your DB schema
     final headPath = selectedImages['Head'];
-    final topPath = selectedImages['Top'];
-    final bottomPath = selectedImages['Bottom'];
-    final shoesPath = selectedImages['Shoes'];
+    final topPath = selectedImages['Tops'];
+    final bottomPath = selectedImages['Bottoms'];
+    final shoesPath = selectedImages['Footwear'];
 
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -244,10 +243,10 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildImageRow("Head"),
-              _buildImageRow("Top"),
-              _buildImageRow("Bottom"),
-              _buildImageRow("Shoes"),
+              ...allItemsByCategory.keys
+                  .map((category) => _buildImageRow(category))
+                  .toList(),
+
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: _saveOrUpdateOutfit,
