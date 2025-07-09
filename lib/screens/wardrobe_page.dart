@@ -118,9 +118,11 @@ class _WardrobePageState extends State<WardrobePage> {
 
   Widget _buildOutfitItemImage(String path) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
+      width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey.shade100,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -130,24 +132,21 @@ class _WardrobePageState extends State<WardrobePage> {
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Image.file(
           File(path),
-          height: 80,
-          width: 80,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: 220, // adjust to your preferred height
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              height: 80,
-              width: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(12),
-              ),
+              height: 220,
+              width: double.infinity,
+              alignment: Alignment.center,
               child: const Icon(
                 Icons.broken_image,
                 color: Color(0xFFCCCCCC),
-                size: 24,
+                size: 48,
               ),
             );
           },
