@@ -28,14 +28,20 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
   @override
   void initState() {
     super.initState();
-    _loadItems();
+
     if (isEditing) {
       _nameController.text = widget.outfit!['name'] ?? "";
-      selectedImages['Head'] = widget.outfit!['headPath'];
-      selectedImages['Top'] = widget.outfit!['topPath'];
-      selectedImages['Bottom'] = widget.outfit!['bottomPath'];
-      selectedImages['Shoes'] = widget.outfit!['shoesPath'];
+      selectedImages = {
+        'Tops': widget.outfit!['topPath'],
+        'Bottoms': widget.outfit!['bottomPath'],
+        'Footwear': widget.outfit!['shoesPath'],
+        'Accessories': null, // only if you're saving this in future
+      };
+    } else {
+      selectedImages = {for (var cat in predefinedCategories) cat: null};
     }
+
+    _loadItems(); // finally load item options
   }
 
   Future<void> _loadItems() async {
@@ -50,10 +56,11 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
         categorizedItems[mainCategory]!.add(item);
       }
     }
-
     setState(() {
       allItemsByCategory = categorizedItems;
-      selectedImages = {for (var cat in predefinedCategories) cat: null};
+      if (!isEditing) {
+        selectedImages = {for (var cat in predefinedCategories) cat: null};
+      }
     });
   }
 
@@ -117,25 +124,56 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.grey.shade100,
-              image:
-                  imagePath != null
-                      ? DecorationImage(
-                        image: FileImage(File(imagePath)),
-                        fit: BoxFit.cover,
-                      )
-                      : null,
-            ),
-            child:
-                imagePath == null
-                    ? const Icon(Icons.image, size: 40, color: Colors.black26)
-                    : null,
+          Stack(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey.shade100,
+                  image:
+                      imagePath != null
+                          ? DecorationImage(
+                            image: FileImage(File(imagePath)),
+                            fit: BoxFit.cover,
+                          )
+                          : null,
+                ),
+                child:
+                    imagePath == null
+                        ? const Icon(
+                          Icons.image,
+                          size: 40,
+                          color: Colors.black26,
+                        )
+                        : null,
+              ),
+              if (imagePath != null)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedImages[category] = null;
+                      });
+                    },
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 16),
           Expanded(
