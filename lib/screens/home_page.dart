@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'wardrobe_page.dart';
 import 'planner_page.dart';
+import 'item_detail_page.dart'; // Add this line
 
 import 'settings_page.dart';
 import 'create_outfit_page.dart'; // Add this import if the class exists in this file
@@ -491,50 +492,82 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Widget _buildItemCard(Map<String, dynamic> item) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () async {
+        final imagePath = item['imagePath'];
+        final imageFile =
+            imagePath != null && File(imagePath).existsSync()
+                ? File(imagePath)
+                : null;
+
+        // 🧠 Fix: Preload imageBytes here if on web
+        Uint8List? imageBytes;
+        if (kIsWeb && imagePath != null && File(imagePath).existsSync()) {
+          imageBytes = await File(imagePath).readAsBytes();
+        }
+
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => ItemDetailPage(
+                  item: item,
+                  imageFile: kIsWeb ? null : imageFile,
+                  imageBytes: imageBytes,
+                  isWeb: kIsWeb,
+                ),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+        );
+
+        if (result == true) {
+          _loadItems(); // 🔄 Refresh the list if item was updated
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child:
+                    item['imagePath'] != null &&
+                            File(item['imagePath']).existsSync()
+                        ? Image.file(File(item['imagePath']), fit: BoxFit.cover)
+                        : const Center(child: Icon(Icons.image_not_supported)),
               ),
-              child:
-                  item['imagePath'] != null &&
-                          File(item['imagePath']).existsSync()
-                      ? Image.file(File(item['imagePath']), fit: BoxFit.cover)
-                      : const Center(child: Icon(Icons.image_not_supported)),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item['brand'] ?? 'No Brand',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  item['category'] ?? 'Unknown Category',
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['brand'] ?? 'No Brand',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    item['category'] ?? 'Unknown Category',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -42,6 +42,12 @@ class DBHelper {
     );
   }
 
+  Future<void> updateItem(Map<String, dynamic> item) async {
+    final db = await database;
+    final id = item['id'];
+    await db.update('items', item, where: 'id = ?', whereArgs: [id]);
+  }
+
   Future _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE users (
