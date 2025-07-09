@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 import '../services/local_db.dart';
+import 'home_page.dart'; // Adjust path if it's in another folder
 
 class AddItemPage extends StatefulWidget {
   final File? imageFile;
@@ -107,7 +108,17 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   Future<void> _saveItem() async {
-    if (widget.imageFile == null && widget.imageBytes == null) {
+    // ✅ Ensure pending inputs are captured
+    if (_colorController.text.trim().isNotEmpty) {
+      _addColor(_colorController.text);
+    }
+    if (_tagsController.text.trim().isNotEmpty) {
+      _addTag(_tagsController.text);
+    }
+
+    if (widget.imageFile == null &&
+        widget.imageBytes == null &&
+        widget.existingItem == null) {
       _showErrorSnackbar("Please select an image first");
       return;
     }
@@ -122,8 +133,8 @@ class _AddItemPageState extends State<AddItemPage> {
       return;
     }
 
-    final itemData = {
-      'imagePath': widget.imageFile?.path ?? '',
+    // Prepare item data
+    final itemData = <String, dynamic>{
       'mainCategory': _selectedMainCategory ?? '',
       'category': _selectedSubCategory ?? '',
       'brand': _brandController.text.trim(),
@@ -134,24 +145,67 @@ class _AddItemPageState extends State<AddItemPage> {
       'datePurchased': _selectedDate?.toIso8601String() ?? '',
     };
 
+    // Add image path only if it's not null
+    if (widget.imageFile != null) {
+      itemData['imagePath'] = widget.imageFile!.path;
+    } else if (widget.existingItem != null &&
+        widget.existingItem!['imagePath'] != null) {
+      // Keep existing image path if no new image is selected
+      itemData['imagePath'] = widget.existingItem!['imagePath'];
+    } else {
+      itemData['imagePath'] = '';
+    }
+
     try {
       final db = DBHelper.instance;
+
       if (widget.existingItem != null && widget.existingItem!['id'] != null) {
+        // Update existing item
         itemData['id'] = widget.existingItem!['id'];
         await db.updateItem(itemData);
+
+        // ✅ Show snackbar BEFORE navigating
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("Item updated successfully!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        // ✅ Then navigate safely
+        Navigator.pop(
+          context,
+          true,
+        ); // Return to previous screen & trigger refresh
       } else {
-        await db.addItem(itemData);
+        // Add new item
+        final newId = await db.addItem(itemData);
+
+        if (newId == -1) {
+          _showErrorSnackbar("Failed to save item. Please try again.");
+          return;
+        }
+
+        _showSuccessSnackbar("Item updated successfully!");
+
+        // Wait a bit so user can see the success message
+        await Future.delayed(const Duration(milliseconds: 800));
+
+        // Then navigate to home page
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+
+        // Just go back for new items
+        Navigator.pop(context, true);
       }
-
-      _showSuccessSnackbar(
-        widget.existingItem != null
-            ? "Item updated successfully!"
-            : "Item saved successfully!",
-      );
-
-      Navigator.pop(context, true);
     } catch (e) {
-      _showErrorSnackbar("Error saving item. Please try again.");
+      print("Error saving item: $e");
+      _showErrorSnackbar("Error saving item: ${e.toString()}");
     }
   }
 

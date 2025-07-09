@@ -43,9 +43,30 @@ class DBHelper {
   }
 
   Future<void> updateItem(Map<String, dynamic> item) async {
-    final db = await database;
-    final id = item['id'];
-    await db.update('items', item, where: 'id = ?', whereArgs: [id]);
+    try {
+      final db = await database;
+      final id = item['id'];
+
+      // Remove the id from the item map before updating
+      final itemToUpdate = Map<String, dynamic>.from(item);
+      itemToUpdate.remove('id');
+
+      final result = await db.update(
+        'items',
+        itemToUpdate,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      if (result == 0) {
+        print("❌ No item found with id: $id");
+      } else {
+        print("✅ Item updated successfully: $id");
+      }
+    } catch (e) {
+      print("❌ Failed to update item: $e");
+      rethrow; // Re-throw to handle in UI
+    }
   }
 
   Future _onCreate(Database db, int version) async {
@@ -66,6 +87,7 @@ class DBHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         imagePath TEXT,
         category TEXT,
+        mainCategory TEXT,
         brand TEXT,
         size TEXT,
         price TEXT,
@@ -95,7 +117,7 @@ class DBHelper {
       return await db.insert('items', item);
     } catch (e) {
       print("❌ Failed to insert item: $e");
-      return -1;
+      rethrow; // Re-throw to handle in UI
     }
   }
 
@@ -108,6 +130,11 @@ class DBHelper {
     final db = await database;
     await db.delete('items');
     print("🧺 All wardrobe items cleared");
+  }
+
+  Future<int> deleteItem(int id) async {
+    final db = await database;
+    return await db.delete('items', where: 'id = ?', whereArgs: [id]);
   }
 
   // 🧥 OUTFIT METHODS
