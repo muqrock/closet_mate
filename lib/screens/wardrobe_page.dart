@@ -93,8 +93,8 @@ class _WardrobePageState extends State<WardrobePage> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (outfit['headPath'] != null)
-                  _buildOutfitItemImage(outfit['headPath']),
+                if (outfit['accessoriesPath'] != null)
+                  _buildOutfitItemImage(outfit['accessoriesPath']),
                 if (outfit['topPath'] != null)
                   _buildOutfitItemImage(outfit['topPath']),
                 if (outfit['bottomPath'] != null)
@@ -257,8 +257,10 @@ class _WardrobePageState extends State<WardrobePage> {
                           ),
                           child: Column(
                             children: [
-                              if (outfit['headPath'] != null)
-                                _buildOutfitItemImage(outfit['headPath']),
+                              if (outfit['accessoriesPath'] != null)
+                                _buildOutfitItemImage(
+                                  outfit['accessoriesPath'],
+                                ),
                               if (outfit['topPath'] != null)
                                 _buildOutfitItemImage(outfit['topPath']),
                               if (outfit['bottomPath'] != null)

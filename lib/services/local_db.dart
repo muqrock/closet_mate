@@ -19,7 +19,7 @@ class DBHelper {
     final path = join(dbPath, 'closetmate.db');
     return await openDatabase(
       path,
-      version: 4, // ⬆️ bumped from 3 to 4 to support mainCategory
+      version: 5,
 
       onCreate: _onCreate,
       onUpgrade: (db, oldVersion, newVersion) async {
@@ -37,6 +37,31 @@ class DBHelper {
         }
         if (oldVersion < 4) {
           await db.execute('ALTER TABLE items ADD COLUMN mainCategory TEXT');
+        }
+        if (oldVersion < 5) {
+          // 1. Create new table with corrected column name
+          await db.execute('''
+    CREATE TABLE new_outfits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      accessoriesPath TEXT,
+      topPath TEXT,
+      bottomPath TEXT,
+      shoesPath TEXT
+    )
+  ''');
+
+          // 2. Copy data (map headPath → accessoriesPath)
+          await db.execute('''
+    INSERT INTO new_outfits (id, name, accessoriesPath, topPath, bottomPath, shoesPath)
+    SELECT id, name, headPath, topPath, bottomPath, shoesPath FROM outfits
+  ''');
+
+          // 3. Drop old table
+          await db.execute('DROP TABLE outfits');
+
+          // 4. Rename new table
+          await db.execute('ALTER TABLE new_outfits RENAME TO outfits');
         }
       },
     );

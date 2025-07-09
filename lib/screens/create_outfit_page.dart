@@ -35,7 +35,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
         'Tops': widget.outfit!['topPath'],
         'Bottoms': widget.outfit!['bottomPath'],
         'Footwear': widget.outfit!['shoesPath'],
-        'Accessories': null, // only if you're saving this in future
+        'Accessories': widget.outfit!['accessoriesPath'],
       };
     } else {
       selectedImages = {for (var cat in predefinedCategories) cat: null};
@@ -211,7 +211,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     final name = _nameController.text.trim();
 
     // extract individual paths based on your DB schema
-    final headPath = selectedImages['Head'];
+    final accessoriesPath = selectedImages['Accessories'];
     final topPath = selectedImages['Tops'];
     final bottomPath = selectedImages['Bottoms'];
     final shoesPath = selectedImages['Footwear'];
@@ -223,7 +223,12 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
       return;
     }
 
-    if ([headPath, topPath, bottomPath, shoesPath].every((e) => e == null)) {
+    if ([
+      accessoriesPath,
+      topPath,
+      bottomPath,
+      shoesPath,
+    ].every((e) => e == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select at least one item.")),
       );
@@ -232,7 +237,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
     final outfit = {
       'name': name,
-      'headPath': headPath,
+      'accessoriesPath': accessoriesPath,
       'topPath': topPath,
       'bottomPath': bottomPath,
       'shoesPath': shoesPath,
