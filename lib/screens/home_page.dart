@@ -347,9 +347,15 @@ class _ProfileTabState extends State<ProfileTab> {
           return Column(
             children: [
               Container(
-                // 🔸 Orange profile header
-                color: const Color(0xFFFF914D),
+                width: double.infinity,
                 padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF914D),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                ),
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
