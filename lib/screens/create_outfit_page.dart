@@ -83,160 +83,177 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder:
-          (_) => Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Icon(
-                      _getCategoryIcon(category),
-                      color: Colors.deepOrange,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      "Select $category",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                items.isEmpty
-                    ? Container(
-                      height: 200,
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.shopping_bag_outlined,
-                              size: 48,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "No items found. Please add one first.",
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+          (_) => DraggableScrollableSheet(
+            expand: false,
+            builder:
+                (_, controller) => SingleChildScrollView(
+                  controller: controller,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Handle bar
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    )
-                    : SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.6,
-                      child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio:
-                                  0.65, // 👈 makes it more square/portrait
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(
+                            _getCategoryIcon(category),
+                            color: Colors.deepOrange,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            "Select $category",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
-                        itemCount: items.length,
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          return GestureDetector(
-                            onTap:
-                                () => _selectItem(category, item['imagePath']),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    spreadRadius: 1,
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      items.isEmpty
+                          ? Container(
+                            height: 200,
+                            child: const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.shopping_bag_outlined,
+                                    size: 48,
+                                    color: Colors.grey,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    "No items found. Please add one first.",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // IMAGE: Now takes more vertical space
-                                  ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(16),
-                                    ),
-                                    child: Image.file(
-                                      File(item['imagePath']),
-                                      width: double.infinity,
-                                      height: 160, // 👈 taller image
-                                      fit: BoxFit.cover,
-                                    ),
+                            ),
+                          )
+                          : SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.6,
+                            child: GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio:
+                                        0.65, // 👈 makes it more square/portrait
                                   ),
-
-                                  // DETAILS
-                                  Padding(
-                                    padding: const EdgeInsets.all(10),
+                              itemCount: items.length,
+                              itemBuilder: (context, index) {
+                                final item = items[index];
+                                return GestureDetector(
+                                  onTap:
+                                      () => _selectItem(
+                                        category,
+                                        item['imagePath'],
+                                      ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          spreadRadius: 1,
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
                                     child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                          CrossAxisAlignment.center,
                                       children: [
-                                        Text(
-                                          item['brand'] ?? 'No brand',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
+                                        // IMAGE takes up major vertical space
+                                        Expanded(
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            child: Container(
+                                              color: Colors.grey.shade100,
+                                              child: Image.file(
+                                                File(item['imagePath']),
+                                                fit:
+                                                    BoxFit
+                                                        .contain, // fully visible
+                                                width: double.infinity,
+                                              ),
+                                            ),
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        if (item['size'] != null &&
-                                            item['size'] != '')
-                                          Text(
-                                            "Size: ${item['size']}",
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.grey.shade700,
-                                            ),
+
+                                        // DETAILS
+                                        Padding(
+                                          padding: const EdgeInsets.all(10),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item['brand'] ?? 'No brand',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (item['size'] != null &&
+                                                  item['size'] != '')
+                                                Text(
+                                                  "Size: ${item['size']}",
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey.shade700,
+                                                  ),
+                                                ),
+                                              if (item['tags'] != null &&
+                                                  item['tags']
+                                                      .toString()
+                                                      .isNotEmpty)
+                                                Text(
+                                                  "Tags: ${item['tags']}",
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey.shade700,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                            ],
                                           ),
-                                        if (item['tags'] != null &&
-                                            item['tags'].toString().isNotEmpty)
-                                          Text(
-                                            "Tags: ${item['tags']}",
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
-                    ),
-              ],
-            ),
+                          ),
+                    ],
+                  ),
+                ),
           ),
     );
   }
