@@ -19,8 +19,7 @@ class DBHelper {
     final path = join(dbPath, 'closetmate.db');
     return await openDatabase(
       path,
-      version: 5,
-
+      version: 6, // ✅ bumped to version 6
       onCreate: _onCreate,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -38,60 +37,29 @@ class DBHelper {
         if (oldVersion < 4) {
           await db.execute('ALTER TABLE items ADD COLUMN mainCategory TEXT');
         }
-        if (oldVersion < 5) {
-          // 1. Create new table with corrected column name
+        if (oldVersion < 5 || oldVersion < 6) {
+          // ✅ Upgrade outfits table to use accessoriesPath
           await db.execute('''
-    CREATE TABLE new_outfits (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      accessoriesPath TEXT,
-      topPath TEXT,
-      bottomPath TEXT,
-      shoesPath TEXT
-    )
-  ''');
+            CREATE TABLE new_outfits (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT,
+              accessoriesPath TEXT,
+              topPath TEXT,
+              bottomPath TEXT,
+              shoesPath TEXT
+            )
+          ''');
 
-          // 2. Copy data (map headPath → accessoriesPath)
           await db.execute('''
-    INSERT INTO new_outfits (id, name, accessoriesPath, topPath, bottomPath, shoesPath)
-    SELECT id, name, headPath, topPath, bottomPath, shoesPath FROM outfits
-  ''');
+            INSERT INTO new_outfits (id, name, accessoriesPath, topPath, bottomPath, shoesPath)
+            SELECT id, name, headPath, topPath, bottomPath, shoesPath FROM outfits
+          ''');
 
-          // 3. Drop old table
           await db.execute('DROP TABLE outfits');
-
-          // 4. Rename new table
           await db.execute('ALTER TABLE new_outfits RENAME TO outfits');
         }
       },
     );
-  }
-
-  Future<void> updateItem(Map<String, dynamic> item) async {
-    try {
-      final db = await database;
-      final id = item['id'];
-
-      // Remove the id from the item map before updating
-      final itemToUpdate = Map<String, dynamic>.from(item);
-      itemToUpdate.remove('id');
-
-      final result = await db.update(
-        'items',
-        itemToUpdate,
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-
-      if (result == 0) {
-        print("❌ No item found with id: $id");
-      } else {
-        print("✅ Item updated successfully: $id");
-      }
-    } catch (e) {
-      print("❌ Failed to update item: $e");
-      rethrow; // Re-throw to handle in UI
-    }
   }
 
   Future _onCreate(Database db, int version) async {
@@ -127,7 +95,7 @@ class DBHelper {
       CREATE TABLE outfits (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
-        headPath TEXT,
+        accessoriesPath TEXT,
         topPath TEXT,
         bottomPath TEXT,
         shoesPath TEXT
@@ -142,7 +110,7 @@ class DBHelper {
       return await db.insert('items', item);
     } catch (e) {
       print("❌ Failed to insert item: $e");
-      rethrow; // Re-throw to handle in UI
+      rethrow;
     }
   }
 
@@ -160,6 +128,31 @@ class DBHelper {
   Future<int> deleteItem(int id) async {
     final db = await database;
     return await db.delete('items', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateItem(Map<String, dynamic> item) async {
+    try {
+      final db = await database;
+      final id = item['id'];
+
+      final itemToUpdate = Map<String, dynamic>.from(item)..remove('id');
+
+      final result = await db.update(
+        'items',
+        itemToUpdate,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      if (result == 0) {
+        print("❌ No item found with id: $id");
+      } else {
+        print("✅ Item updated successfully: $id");
+      }
+    } catch (e) {
+      print("❌ Failed to update item: $e");
+      rethrow;
+    }
   }
 
   // 🧥 OUTFIT METHODS
@@ -189,7 +182,7 @@ class DBHelper {
     return await db.delete('outfits', where: 'id = ?', whereArgs: [id]);
   }
 
-  // 📊 ITEM & OUTFIT COUNTS
+  // 📊 COUNTS
   Future<int> getItemCount() async {
     final db = await database;
     return Sqflite.firstIntValue(
