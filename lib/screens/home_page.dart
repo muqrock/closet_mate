@@ -9,7 +9,6 @@ import '../services/local_db.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'wardrobe_page.dart';
-import 'planner_page.dart';
 import 'item_detail_page.dart';
 import 'settings_page.dart';
 import 'create_outfit_page.dart';
@@ -37,7 +36,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final List<Widget> _pages = [
     const ProfileTab(),
     const WardrobePage(),
-    const PlannerPage(),
     const SettingsPage(),
   ];
 
@@ -169,11 +167,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               activeIcon: Icon(MdiIcons.tshirtCrew),
               label: 'Wardrobe',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today_outlined),
-              activeIcon: Icon(Icons.calendar_today),
-              label: 'Planner',
-            ),
+
             BottomNavigationBarItem(
               icon: Icon(Icons.settings_outlined),
               activeIcon: Icon(Icons.settings),
