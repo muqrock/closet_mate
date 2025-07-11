@@ -12,17 +12,38 @@ class WardrobePage extends StatefulWidget {
 
 class _WardrobePageState extends State<WardrobePage> {
   List<Map<String, dynamic>> _outfits = [];
+  List<Map<String, dynamic>> _filteredOutfits = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _searchController.addListener(_filterOutfits);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
     final outfits = await DBHelper.instance.getAllOutfits();
     setState(() {
       _outfits = outfits;
+      _filteredOutfits = outfits;
+    });
+  }
+
+  void _filterOutfits() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredOutfits =
+          _outfits.where((outfit) {
+            final name = (outfit['name'] ?? '').toLowerCase();
+            return name.contains(query);
+          }).toList();
     });
   }
 
@@ -189,11 +210,62 @@ class _WardrobePageState extends State<WardrobePage> {
                       "Manage your outfit collection",
                       style: TextStyle(fontSize: 14, color: Colors.white70),
                     ),
+                    const SizedBox(height: 16),
+                    // Search bar
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: "Search outfits...",
+                          hintStyle: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.grey.shade500,
+                          ),
+                          suffixIcon:
+                              _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                    icon: Icon(
+                                      Icons.clear,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                    },
+                                  )
+                                  : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-            _outfits.isEmpty
+            _filteredOutfits.isEmpty
                 ? SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
@@ -206,16 +278,20 @@ class _WardrobePageState extends State<WardrobePage> {
                             color: const Color(0xFFFFF3E0),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Icon(
-                            Icons.checkroom_outlined,
+                          child: Icon(
+                            _searchController.text.isNotEmpty
+                                ? Icons.search_off
+                                : Icons.checkroom_outlined,
                             size: 48,
-                            color: Color(0xFFFF5722),
+                            color: const Color(0xFFFF5722),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          "No outfits yet",
-                          style: TextStyle(
+                        Text(
+                          _searchController.text.isNotEmpty
+                              ? "No outfits found"
+                              : "No outfits yet",
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF333333),
@@ -223,7 +299,9 @@ class _WardrobePageState extends State<WardrobePage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Create your first outfit to get started!",
+                          _searchController.text.isNotEmpty
+                              ? "Try searching with different keywords"
+                              : "Create your first outfit to get started!",
                           style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                       ],
@@ -232,7 +310,7 @@ class _WardrobePageState extends State<WardrobePage> {
                 )
                 : SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    final outfit = _outfits[index];
+                    final outfit = _filteredOutfits[index];
                     return Padding(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: GestureDetector(
@@ -352,7 +430,7 @@ class _WardrobePageState extends State<WardrobePage> {
                         ),
                       ),
                     );
-                  }, childCount: _outfits.length),
+                  }, childCount: _filteredOutfits.length),
                 ),
           ],
         ),
