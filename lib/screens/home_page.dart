@@ -788,17 +788,17 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12), // was 20
         child: Column(
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 12), // was 20
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'My Profile',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 24, // was 28
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -812,39 +812,45 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 18), // was 30
             Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(2), // was 4
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(60),
               ),
               child: const CircleAvatar(
-                radius: 50,
+                radius: 36, // was 50
                 backgroundColor: Colors.white,
-                child: Icon(Icons.person, size: 50, color: Color(0xFFFF914D)),
+                child: Icon(
+                  Icons.person,
+                  size: 36,
+                  color: Color(0xFFFF914D),
+                ), // was 50
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              fullName,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            const SizedBox(height: 12), // was 20
+            Center(
+              child: Text(
+                fullName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4), // was 8
             Text(
               '@$username',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14, // was 16
                 color: Colors.white.withOpacity(0.8),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 18), // was 30
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(12), // was 24
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -860,12 +866,16 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildStatCard('Items', _itemCount, Icons.checkroom),
-                  Container(height: 60, width: 1, color: Colors.grey.shade300),
+                  Container(
+                    height: 40,
+                    width: 1,
+                    color: Colors.grey.shade300,
+                  ), // was 60
                   _buildStatCard('Outfits', _outfitCount, Icons.style),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10), // was 20
           ],
         ),
       ),
@@ -983,9 +993,10 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.8,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+          childAspectRatio:
+              MediaQuery.of(context).size.width > 600 ? 0.75 : 0.8,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -998,163 +1009,206 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
   }
 
   Widget _buildItemCard(Map<String, dynamic> item) {
-    return GestureDetector(
-      onTap: () async {
-        final imagePath = item['imagePath'];
-        final imageFile =
-            imagePath != null && File(imagePath).existsSync()
-                ? File(imagePath)
-                : null;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GestureDetector(
+          onTap: () async {
+            final imagePath = item['imagePath'];
+            final imageFile =
+                imagePath != null && File(imagePath).existsSync()
+                    ? File(imagePath)
+                    : null;
 
-        Uint8List? imageBytes;
-        if (kIsWeb && imagePath != null && File(imagePath).existsSync()) {
-          imageBytes = await File(imagePath).readAsBytes();
-        }
+            Uint8List? imageBytes;
+            if (kIsWeb && imagePath != null && File(imagePath).existsSync()) {
+              imageBytes = await File(imagePath).readAsBytes();
+            }
 
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => ItemDetailPage(
-                  item: item,
-                  imageFile: kIsWeb ? null : imageFile,
-                  imageBytes: imageBytes,
-                  isWeb: kIsWeb,
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => ItemDetailPage(
+                      item: item,
+                      imageFile: kIsWeb ? null : imageFile,
+                      imageBytes: imageBytes,
+                      isWeb: kIsWeb,
+                    ),
+              ),
+            );
+
+            if (result == true) {
+              await _refreshData();
+            }
+          },
+          onLongPress: () => _showItemOptions(item),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
                 ),
-          ),
-        );
-
-        if (result == true) {
-          await _refreshData();
-        }
-      },
-      onLongPress: () => _showItemOptions(item),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              flex: 3,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-                child:
-                    item['imagePath'] != null &&
-                            File(item['imagePath']).existsSync()
-                        ? Stack(
-                          children: [
-                            Image.file(
-                              File(item['imagePath']),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Image section - takes up most of the space
+                Expanded(
+                  flex: 3,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    child:
+                        item['imagePath'] != null &&
+                                File(item['imagePath']).existsSync()
+                            ? Stack(
+                              children: [
+                                Image.file(
+                                  File(item['imagePath']),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
                                 ),
-                                child: const Icon(
-                                  Icons.more_vert,
-                                  color: Colors.white,
-                                  size: 16,
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.more_vert,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                            : Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported_outlined,
+                                  size: 40,
+                                  color: Colors.grey,
                                 ),
                               ),
                             ),
-                          ],
-                        )
-                        : Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-              ),
-            ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['brand'] ?? 'No Brand',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item['category'] ?? 'Unknown Category',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 14,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                    if (item['mainCategory'] != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF914D).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          item['mainCategory'],
-                          style: const TextStyle(
-                            color: Color(0xFFFF914D),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
+                // Text section - flexible based on available space
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: LayoutBuilder(
+                      builder: (context, textConstraints) {
+                        final availableHeight = textConstraints.maxHeight;
+                        final hasMainCategory = item['mainCategory'] != null;
+
+                        // Calculate if we have enough space for all elements
+                        final minRequiredHeight = hasMainCategory ? 55.0 : 40.0;
+                        final showChip =
+                            hasMainCategory &&
+                            availableHeight > minRequiredHeight;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Brand name - always visible
+                            Text(
+                              item['brand'] ?? 'No Brand',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            // Category - always visible
+                            Text(
+                              item['category'] ?? 'Unknown Category',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            // Main category chip - only show if there's enough space
+                            if (showChip) ...[
+                              const SizedBox(height: 8),
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child: Container(
+                                    constraints: BoxConstraints(
+                                      maxWidth: textConstraints.maxWidth * 0.9,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFFFF914D,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      item['mainCategory'],
+                                      style: const TextStyle(
+                                        color: Color(0xFFFF914D),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ] else if (hasMainCategory) ...[
+                              // If no space for chip, show as small text
+                              const SizedBox(height: 2),
+                              Text(
+                                item['mainCategory'],
+                                style: const TextStyle(
+                                  color: Color(0xFFFF914D),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
