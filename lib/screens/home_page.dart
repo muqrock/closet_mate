@@ -996,7 +996,9 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
           childAspectRatio:
-              MediaQuery.of(context).size.width > 600 ? 0.75 : 0.8,
+              MediaQuery.of(context).size.width > 600
+                  ? 0.5
+                  : 0.55, // <-- Make this smaller!
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
