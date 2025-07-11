@@ -256,6 +256,87 @@ class _WardrobePageState extends State<WardrobePage> {
                           ),
                           child: Column(
                             children: [
+                              // Outfit name and buttons at the top
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      outfit['name'] ?? "Unnamed Outfit",
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF333333),
+                                      ),
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFE0B2),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: IconButton(
+                                          onPressed: () async {
+                                            final result = await Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => CreateOutfitPage(
+                                                      outfit: outfit,
+                                                    ),
+                                              ),
+                                            );
+                                            if (result == true) _loadData();
+                                          },
+                                          icon: const Icon(
+                                            Icons.edit_outlined,
+                                            color: Color(0xFFFF5722),
+                                            size: 18,
+                                          ),
+                                          padding: const EdgeInsets.all(8),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 32,
+                                            minHeight: 32,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: IconButton(
+                                          onPressed:
+                                              () => _confirmDeleteOutfit(
+                                                context,
+                                                outfit['id'],
+                                              ),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                            size: 18,
+                                          ),
+                                          padding: const EdgeInsets.all(8),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 32,
+                                            minHeight: 32,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              // Outfit images
                               if (outfit['accessoriesPath'] != null)
                                 _buildOutfitItemImage(
                                   outfit['accessoriesPath'],
@@ -266,79 +347,6 @@ class _WardrobePageState extends State<WardrobePage> {
                                 _buildOutfitItemImage(outfit['bottomPath']),
                               if (outfit['shoesPath'] != null)
                                 _buildOutfitItemImage(outfit['shoesPath']),
-                              const SizedBox(height: 12),
-                              Text(
-                                outfit['name'] ?? "Unnamed Outfit",
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF333333),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade50,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: TextButton.icon(
-                                      onPressed:
-                                          () => _confirmDeleteOutfit(
-                                            context,
-                                            outfit['id'],
-                                          ),
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                        size: 18,
-                                      ),
-                                      label: const Text(
-                                        "Delete",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFE0B2),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: TextButton.icon(
-                                      onPressed: () async {
-                                        final result = await Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => CreateOutfitPage(
-                                                  outfit: outfit,
-                                                ),
-                                          ),
-                                        );
-                                        if (result == true) _loadData();
-                                      },
-                                      icon: const Icon(
-                                        Icons.edit_outlined,
-                                        color: Color(0xFFFF5722),
-                                        size: 18,
-                                      ),
-                                      label: const Text(
-                                        "Edit",
-                                        style: TextStyle(
-                                          color: Color(0xFFFF5722),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         ),
