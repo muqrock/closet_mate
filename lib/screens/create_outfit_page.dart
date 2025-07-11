@@ -123,27 +123,25 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                       ),
                       const SizedBox(height: 16),
                       items.isEmpty
-                          ? Container(
-                            height: 200,
-                            child: const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.shopping_bag_outlined,
-                                    size: 48,
+                          ? const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.shopping_bag_outlined,
+                                  size: 48,
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "No items found. Please add one first.",
+                                  style: TextStyle(
                                     color: Colors.grey,
+                                    fontSize: 16,
                                   ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    "No items found. Please add one first.",
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           )
                           : SizedBox(
@@ -375,28 +373,36 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
               Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize:
+                      MainAxisSize.min, // Added this to prevent overflow
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8), // Reduced from 12 to 8
                       decoration: BoxDecoration(
                         color: Colors.grey.shade200,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.add,
-                        size: 24,
+                        size: 20, // Reduced from 24 to 20
                         color: Colors.grey.shade600,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      hasItems
-                          ? "Add ${category.toLowerCase()}"
-                          : "No ${category.toLowerCase()}",
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(height: 4), // Reduced from 8 to 4
+                    Flexible(
+                      // Wrapped text with Flexible
+                      child: Text(
+                        hasItems
+                            ? "Add ${category.toLowerCase()}"
+                            : "No ${category.toLowerCase()}",
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 10, // Reduced from 12 to 10
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
