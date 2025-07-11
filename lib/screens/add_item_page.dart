@@ -369,44 +369,46 @@ class _AddItemPageState extends State<AddItemPage> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Select Size',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-              ...sizes
-                  .map(
-                    (size) => ListTile(
-                      title: Text(size),
-                      onTap: () {
-                        setState(() => _sizeController.text = size);
-                        Navigator.pop(context);
-                      },
-                      leading: const Icon(
-                        Icons.straighten,
-                        color: Colors.deepOrange,
-                      ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Select Size',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                  )
-                  .toList(),
-              const SizedBox(height: 16),
-            ],
+                  ),
+                ),
+                ...sizes
+                    .map(
+                      (size) => ListTile(
+                        title: Text(size),
+                        onTap: () {
+                          setState(() => _sizeController.text = size);
+                          Navigator.pop(context);
+                        },
+                        leading: const Icon(
+                          Icons.straighten,
+                          color: Colors.deepOrange,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
       },
