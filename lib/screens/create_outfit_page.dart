@@ -155,7 +155,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                     crossAxisSpacing: 12,
                                     mainAxisSpacing: 12,
                                     childAspectRatio:
-                                        0.65, // 👈 makes it more square/portrait
+                                        0.55, // 👈 makes it more square/portrait
                                   ),
                               itemCount: items.length,
                               itemBuilder: (context, index) {

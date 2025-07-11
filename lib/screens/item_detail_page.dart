@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'add_item_page.dart';
+import '../services/local_db.dart';
 
 class ItemDetailPage extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -93,7 +94,7 @@ class ItemDetailPage extends StatelessWidget {
 
                     // Edit Button
                     _buildEditButton(context),
-
+                    _buildDeleteButton(context),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -424,6 +425,102 @@ class ItemDetailPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildDeleteButton(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      margin: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Colors.red, Colors.redAccent],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: () => _confirmDelete(context),
+        icon: const Icon(Icons.delete, color: Colors.white),
+        label: const Text(
+          'Delete Item',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Add this method to handle delete confirmation and deletion
+  void _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Item'),
+            content: const Text('Are you sure you want to delete this item?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true) {
+      // You need to import your DBHelper and call deleteItem
+      // Example:
+      // import '../services/local_db.dart';
+      try {
+        final dbHelper = DBHelper.instance;
+        await dbHelper.deleteItem(item['id']);
+        if (context.mounted) {
+          Navigator.pop(context, true); // Go back and signal deletion
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Item deleted successfully'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete item: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _navigateToEdit(BuildContext context) async {

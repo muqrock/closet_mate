@@ -788,17 +788,17 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12), // was 20
+        padding: const EdgeInsets.all(8), // was 12
         child: Column(
           children: [
-            const SizedBox(height: 12), // was 20
+            const SizedBox(height: 8), // was 12
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'My Profile',
                   style: TextStyle(
-                    fontSize: 24, // was 28
+                    fontSize: 20, // was 24
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -806,107 +806,132 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
                 RotationTransition(
                   turns: _refreshController,
                   child: IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    icon: const Icon(
+                      Icons.refresh,
+                      color: Colors.white,
+                      size: 22,
+                    ), // was default
                     onPressed: _refreshData,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18), // was 30
+            const SizedBox(height: 10), // was 18
             Container(
-              padding: const EdgeInsets.all(2), // was 4
+              padding: const EdgeInsets.all(1), // was 2
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(60),
               ),
               child: const CircleAvatar(
-                radius: 36, // was 50
+                radius: 28, // was 36
                 backgroundColor: Colors.white,
                 child: Icon(
                   Icons.person,
-                  size: 36,
+                  size: 28, // was 36
                   color: Color(0xFFFF914D),
-                ), // was 50
+                ),
               ),
             ),
-            const SizedBox(height: 12), // was 20
+            const SizedBox(height: 8), // was 12
             Center(
               child: Text(
                 fullName,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 15, // was 18
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
             ),
-            const SizedBox(height: 4), // was 8
+            const SizedBox(height: 2), // was 4
             Text(
               '@$username',
               style: TextStyle(
-                fontSize: 14, // was 16
+                fontSize: 12, // was 14
                 color: Colors.white.withOpacity(0.8),
               ),
             ),
-            const SizedBox(height: 18), // was 30
+            const SizedBox(height: 10), // was 18
             Container(
-              padding: const EdgeInsets.all(12), // was 24
+              padding: const EdgeInsets.all(8), // was 12
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+                    blurRadius: 12, // was 20
+                    offset: const Offset(0, 6), // was 10
                   ),
                 ],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildStatCard('Items', _itemCount, Icons.checkroom),
+                  _buildStatCard(
+                    'Items',
+                    _itemCount,
+                    Icons.checkroom,
+                    iconSize: 18,
+                    fontSize: 20,
+                  ),
                   Container(
-                    height: 40,
+                    height: 28, // was 40
                     width: 1,
                     color: Colors.grey.shade300,
-                  ), // was 60
-                  _buildStatCard('Outfits', _outfitCount, Icons.style),
+                  ),
+                  _buildStatCard(
+                    'Outfits',
+                    _outfitCount,
+                    Icons.style,
+                    iconSize: 18,
+                    fontSize: 20,
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 10), // was 20
+            const SizedBox(height: 6), // was 10
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatCard(String label, int count, IconData icon) {
+  // Update your _buildStatCard to accept iconSize and fontSize:
+  Widget _buildStatCard(
+    String label,
+    int count,
+    IconData icon, {
+    double iconSize = 24,
+    double fontSize = 28,
+  }) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8), // was 12
           decoration: BoxDecoration(
             color: const Color(0xFFFF914D).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: const Color(0xFFFF914D), size: 24),
+          child: Icon(icon, color: const Color(0xFFFF914D), size: iconSize),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8), // was 12
         Text(
           count.toString(),
-          style: const TextStyle(
-            fontSize: 28,
+          style: TextStyle(
+            fontSize: fontSize,
             fontWeight: FontWeight.bold,
-            color: Color(0xFFFF914D),
+            color: const Color(0xFFFF914D),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2), // was 4
         Text(
           label,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12, // was 14
             color: Colors.grey.shade600,
             fontWeight: FontWeight.w500,
           ),
@@ -1076,22 +1101,6 @@ class _ProfileTabState extends State<ProfileTab> with TickerProviderStateMixin {
                                   fit: BoxFit.cover,
                                   width: double.infinity,
                                   height: double.infinity,
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                      Icons.more_vert,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ),
                                 ),
                               ],
                             )
