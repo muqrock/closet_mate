@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/local_db.dart';
 import 'home_page.dart'; // Adjust path if it's in another folder
 
@@ -46,11 +47,32 @@ class _AddItemPageState extends State<AddItemPage> {
   final List<String> _colors = [];
   final List<String> _tags = [];
 
+  // Image related variables
+  File? _currentImageFile;
+  Uint8List? _currentImageBytes;
+  String? _existingImagePath;
+  bool _imageChanged = false;
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
+    _initializeImage();
     if (widget.existingItem != null) {
       _initializeExistingItem();
+    }
+  }
+
+  void _initializeImage() {
+    if (widget.imageFile != null) {
+      _currentImageFile = widget.imageFile;
+    }
+    if (widget.imageBytes != null) {
+      _currentImageBytes = widget.imageBytes;
+    }
+    if (widget.existingItem != null &&
+        widget.existingItem!['imagePath'] != null) {
+      _existingImagePath = widget.existingItem!['imagePath'];
     }
   }
 
@@ -71,6 +93,124 @@ class _AddItemPageState extends State<AddItemPage> {
     if (item['datePurchased'] != null && item['datePurchased'] != '') {
       _selectedDate = DateTime.tryParse(item['datePurchased']);
     }
+  }
+
+  Future<void> _showImageSourceDialog() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Select Image Source',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Colors.deepOrange),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Colors.deepOrange,
+                ),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              if (_hasCurrentImage()) ...[
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remove Image'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removeImage();
+                  },
+                ),
+              ],
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _imageChanged = true;
+          if (widget.isWeb) {
+            // For web, we'll need to read the bytes
+            image.readAsBytes().then((bytes) {
+              setState(() {
+                _currentImageBytes = bytes;
+                _currentImageFile = null;
+              });
+            });
+          } else {
+            // For mobile, use the file
+            _currentImageFile = File(image.path);
+            _currentImageBytes = null;
+          }
+        });
+
+        _showSuccessSnackbar('Image updated successfully!');
+      }
+    } catch (e) {
+      _showErrorSnackbar('Failed to pick image: ${e.toString()}');
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _currentImageFile = null;
+      _currentImageBytes = null;
+      _existingImagePath = null;
+      _imageChanged = true;
+    });
+    _showSuccessSnackbar('Image removed successfully!');
+  }
+
+  bool _hasCurrentImage() {
+    return _currentImageFile != null ||
+        _currentImageBytes != null ||
+        (_existingImagePath != null && _existingImagePath!.isNotEmpty);
   }
 
   void _pickDate() async {
@@ -116,9 +256,8 @@ class _AddItemPageState extends State<AddItemPage> {
       _addTag(_tagsController.text);
     }
 
-    if (widget.imageFile == null &&
-        widget.imageBytes == null &&
-        widget.existingItem == null) {
+    // Check if we have an image (either new or existing)
+    if (!_hasCurrentImage() && widget.existingItem == null) {
       _showErrorSnackbar("Please select an image first");
       return;
     }
@@ -145,13 +284,23 @@ class _AddItemPageState extends State<AddItemPage> {
       'datePurchased': _selectedDate?.toIso8601String() ?? '',
     };
 
-    // Add image path only if it's not null
-    if (widget.imageFile != null) {
-      itemData['imagePath'] = widget.imageFile!.path;
+    // Handle image path
+    if (_imageChanged) {
+      if (_currentImageFile != null) {
+        itemData['imagePath'] = _currentImageFile!.path;
+      } else if (_currentImageBytes != null) {
+        // For web, you might want to save bytes to a file or handle differently
+        // This depends on your storage strategy for web
+        itemData['imagePath'] = ''; // Handle web image storage as needed
+      } else {
+        itemData['imagePath'] = ''; // Image removed
+      }
     } else if (widget.existingItem != null &&
         widget.existingItem!['imagePath'] != null) {
-      // Keep existing image path if no new image is selected
+      // Keep existing image path if no changes made
       itemData['imagePath'] = widget.existingItem!['imagePath'];
+    } else if (_currentImageFile != null) {
+      itemData['imagePath'] = _currentImageFile!.path;
     } else {
       itemData['imagePath'] = '';
     }
@@ -188,7 +337,7 @@ class _AddItemPageState extends State<AddItemPage> {
           return;
         }
 
-        _showSuccessSnackbar("Item updated successfully!");
+        _showSuccessSnackbar("Item saved successfully!");
 
         // Wait a bit so user can see the success message
         await Future.delayed(const Duration(milliseconds: 800));
@@ -326,22 +475,53 @@ class _AddItemPageState extends State<AddItemPage> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: _buildImagePreview(),
+                  GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: _buildImagePreview(),
+                          ),
+                          // Edit overlay
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.deepOrange,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Item Photo',
+                    'Tap to change photo',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -540,14 +720,15 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   Widget _buildImagePreview() {
-    if (widget.isWeb) {
-      return widget.imageBytes != null
-          ? Image.memory(widget.imageBytes!, fit: BoxFit.cover)
-          : const Icon(Icons.add_a_photo, size: 64, color: Colors.grey);
+    // Priority: Current new image > existing image > placeholder
+    if (_currentImageFile != null) {
+      return Image.file(_currentImageFile!, fit: BoxFit.cover);
+    } else if (_currentImageBytes != null) {
+      return Image.memory(_currentImageBytes!, fit: BoxFit.cover);
+    } else if (_existingImagePath != null && _existingImagePath!.isNotEmpty) {
+      return Image.file(File(_existingImagePath!), fit: BoxFit.cover);
     } else {
-      return widget.imageFile != null
-          ? Image.file(widget.imageFile!, fit: BoxFit.cover)
-          : const Icon(Icons.add_a_photo, size: 64, color: Colors.grey);
+      return const Icon(Icons.add_a_photo, size: 64, color: Colors.grey);
     }
   }
 
